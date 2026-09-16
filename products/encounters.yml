@@ -1,0 +1,7 @@
+name: encounters
+bronze_table: encounters
+string_columns: [Id, PATIENT, ORGANIZATION, PROVIDER, PAYER, ENCOUNTERCLASS, CODE, DESCRIPTION, REASONCODE, REASONDESCRIPTION]
+date_columns: []
+timestamp_columns: [START, STOP]
+double_columns: [BASE_ENCOUNTER_COST, TOTAL_CLAIM_COST, PAYER_COVERAGE]
+long_columns: []

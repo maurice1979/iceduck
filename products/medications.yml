@@ -1,0 +1,7 @@
+name: medications
+bronze_table: medications
+string_columns: [PATIENT, PAYER, ENCOUNTER, CODE, DESCRIPTION, REASONCODE, REASONDESCRIPTION]
+date_columns: []
+timestamp_columns: [START, STOP]
+double_columns: [BASE_COST, PAYER_COVERAGE, TOTALCOST]
+long_columns: [DISPENSES]

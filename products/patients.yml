@@ -1,0 +1,7 @@
+name: patients
+bronze_table: patients
+string_columns: [Id, SSN, DRIVERS, PASSPORT, PREFIX, FIRST, LAST, SUFFIX, MAIDEN, MARITAL, RACE, ETHNICITY, GENDER, BIRTHPLACE, ADDRESS, CITY, STATE, COUNTY, ZIP]
+date_columns: [BIRTHDATE, DEATHDATE]
+timestamp_columns: []
+double_columns: [LAT, LON, HEALTHCARE_EXPENSES, HEALTHCARE_COVERAGE]
+long_columns: []

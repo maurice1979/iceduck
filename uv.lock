@@ -454,6 +454,7 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "pyiceberg", extra = ["glue", "pyarrow"] },
     { name = "python-dotenv" },
+    { name = "pyyaml" },
 ]
 
 [package.metadata]
@@ -467,6 +468,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.15.0" },
     { name = "pyiceberg", extras = ["glue", "pyarrow"], specifier = ">=0.12.0" },
     { name = "python-dotenv", specifier = ">=1.2.3" },
+    { name = "pyyaml", specifier = ">=6.0" },
 ]
 
 [[package]]

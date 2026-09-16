@@ -1,0 +1,7 @@
+name: providers
+bronze_table: providers
+string_columns: [Id, ORGANIZATION, NAME, GENDER, SPECIALITY, ADDRESS, CITY, STATE, ZIP]
+date_columns: []
+timestamp_columns: []
+double_columns: [LAT, LON]
+long_columns: [UTILIZATION]

@@ -1,0 +1,7 @@
+name: conditions
+bronze_table: conditions
+string_columns: [PATIENT, ENCOUNTER, CODE, DESCRIPTION]
+date_columns: [START, STOP]
+timestamp_columns: []
+double_columns: []
+long_columns: []

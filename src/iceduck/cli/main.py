@@ -9,6 +9,7 @@ from iceduck.core.settings import (
     GLUE_DATABASE_SILVER,
     settings,
 )
+from iceduck.products.health import ingest_product, load_product, load_products
 
 FIXTURES_DIR = Path(__file__).parent.parent.parent.parent / "sample_data" / "health" / "fixtures"
 
@@ -45,6 +46,23 @@ def s3_upload_raw():
         key = f"raw/{entity}/{csv_file.name}"
         client.upload_file(str(csv_file), settings.bucket_name, key)
         click.echo(f"Uploaded {csv_file} -> s3://{settings.bucket_name}/{key}")
+
+
+@cli.command()
+@click.argument("entity")
+def ingest(entity: str):
+    """Ingest one entity from raw/ into iceduck_bronze as an Iceberg table."""
+    product = load_product(entity)
+    rows = ingest_product(product)
+    click.echo(f"{product.bronze_table}: {rows} rows -> {GLUE_DATABASE_BRONZE}.{product.bronze_table}")
+
+
+@cli.command("ingest-all")
+def ingest_all():
+    """Ingest every products/*.yml entity from raw/ into iceduck_bronze."""
+    for product in load_products():
+        rows = ingest_product(product)
+        click.echo(f"{product.bronze_table}: {rows} rows -> {GLUE_DATABASE_BRONZE}.{product.bronze_table}")
 
 
 if __name__ == "__main__":

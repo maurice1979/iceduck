@@ -1,0 +1,7 @@
+name: organizations
+bronze_table: organizations
+string_columns: [Id, NAME, ADDRESS, CITY, STATE, ZIP, PHONE]
+date_columns: []
+timestamp_columns: []
+double_columns: [LAT, LON, REVENUE]
+long_columns: [UTILIZATION]
