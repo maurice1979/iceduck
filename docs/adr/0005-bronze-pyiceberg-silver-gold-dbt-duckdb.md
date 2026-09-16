@@ -1,23 +1,32 @@
 # ADR-0005: Bronze via pyiceberg directly; silver/gold via dbt-duckdb with a selectable write mode
 
-Status: Proposed — pending the Iceberg-on-Glue spike (Build Order step 3 in `docs/plans/0001-lakehouse-architecture-outline.md`)
-Date: 2026-09-15
+Status: Accepted
+Date: 2026-09-16 (resolved by the spike in `docs/plans/0003-iceberg-glue-spike.md`)
 
 ## Context
 
-`dbt-duckdb`'s native ability to materialize Iceberg tables directly into Glue (via the `dbt-duckdb[glue]` extra and dbt's `catalogs.yml`) is labeled experimental. Bronze ingestion is the first, most foundational Iceberg write in the pipeline — everything downstream depends on it succeeding reliably — so it shouldn't be built on the more novel, unverified path.
+`dbt-duckdb`'s native ability to materialize Iceberg tables directly into Glue (via the `dbt-duckdb[glue]` extra and dbt's `catalogs.yml`) was labeled experimental. Bronze ingestion is the first, most foundational Iceberg write in the pipeline — everything downstream depends on it succeeding reliably — so it wasn't built on the more novel, unverified path.
 
 ## Decision
 
-- **Bronze** is always written via `pyiceberg`'s `GlueCatalog`, pointed at Floci, regardless of any other setting — the mature, direct path.
-- **Silver and gold** are built via dbt (`dbt-duckdb`, attached to Glue through `catalogs.yml`), materialized as real Iceberg tables. The exact write mechanism is chosen by `ICEBERG_WRITE_MODE=duckdb_native|pyiceberg`:
-  - `duckdb_native`: dbt-duckdb writes Iceberg directly into Glue via `dbt-duckdb[glue]`.
-  - `pyiceberg`: dbt-duckdb writes external Parquet, then a small `iceberg_publish.py` script uses `pyiceberg`'s `GlueCatalog` to create/write true Iceberg tables from that Parquet into the appropriate Glue database.
-- Both modes are required to produce the same end state (real Iceberg tables in Glue), so downstream consumers (Athena, DuckDB) don't need to know which mode built a given table.
-- The choice between modes is made by an early spike (Build Order step 3) that tests both paths against Floci and records the verdict in `docs/plans/`.
+- **Bronze** is always written via `pyiceberg`'s `GlueCatalog`, pointed at Floci — the mature, direct path.
+- **Silver and gold** will be built via dbt (`dbt-duckdb`), also materialized as real Iceberg tables in Glue. `ICEBERG_WRITE_MODE=pyiceberg` is the resolved (and, as of this writing, only working) mode: dbt-duckdb writes to DuckDB as normal, then a `pyiceberg`-based publish step creates/writes the true Iceberg table in the appropriate Glue database from that output — the same mechanism proven for bronze.
+- `ICEBERG_WRITE_MODE=duckdb_native` remains defined as a value but is **not usable today** (see verdict below); the toggle is kept in `.env`/`.env.template` so the native path can be revisited without a breaking config change if dbt-duckdb or Floci close the gap later.
+
+## Verdict (from the spike)
+
+Both candidate write paths were actually run against a live Floci instance, per `docs/plans/0003-iceberg-glue-spike.md`:
+
+- **`pyiceberg` (path a): works end-to-end.** `scripts/glue_iceberg_spike.py` created a table in `iceduck_bronze`, wrote 3 rows, and read them back correctly from both a fresh `pyiceberg` session and a fresh DuckDB session (`iceberg_scan()` against the resolved `metadata_location`). Glue's `GetTable` shows genuine Iceberg metadata (`Parameters.table_type=ICEBERG`, `metadata_location` pointing at a real `metadata/*.json` file).
+- **`dbt-duckdb` native (path b): fails today, and not for the reason originally hypothesized.** Pre-implementation research suspected a protocol gap (Glue's Iceberg REST Catalog endpoint, which Floci doesn't implement). The actual failure is more basic: dbt-duckdb 1.11.0 — the current latest release, confirmed via PyPI — doesn't support the `catalogs.yml` v2 schema at all yet:
+  ```
+  Runtime Error
+    Adapter 'duckdb' does not support catalogs.yml v2 yet. Use catalogs.yml v1 or upgrade to a supported adapter version.
+  ```
+  This is a clean adapter-support gap, reproducible with the minimal scaffold in `dbt/iceduck/`. The suspected deeper protocol gap (Floci has no Iceberg REST endpoint for Glue) is still real and documented in ADR-0007 — it would very likely block this path even if dbt-duckdb added v2 support — but wasn't what actually stopped this attempt.
 
 ## Consequences
 
-- De-risks the most experimental part of the stack early, before staging/intermediate/marts models are built on top of it.
-- Introduces a runtime toggle and two code paths (`duckdb_native` vs `pyiceberg`) to maintain until one is retired — real complexity, accepted deliberately as a hedge against `dbt-duckdb[glue]` proving unstable.
-- This ADR stays **Proposed** rather than **Accepted** until the spike actually runs; its verdict (and the final `ICEBERG_WRITE_MODE` value, or confirmation both remain supported) should be recorded in a `docs/plans/000X-*.md` phase doc, at which point this ADR should be updated to Accepted with a pointer to it.
+- Bronze/silver/gold all use the same proven write mechanism (`pyiceberg`'s `GlueCatalog`), which simplifies the pipeline: one write path to reason about and test, not two.
+- The `ICEBERG_WRITE_MODE` toggle exists but currently has only one working value — it's not dead code so much as a documented placeholder for a path that isn't viable yet, either from dbt-duckdb's side (no `catalogs.yml` v2 support) or Floci's (no Iceberg REST endpoint for Glue, per ADR-0007). Revisit if either changes.
+- Silver/gold models built via dbt will need a small publish step (dbt writes DuckDB output → a script promotes it to a real Iceberg table via `pyiceberg`), mirroring bronze's `iceberg_publish.py` role described in `docs/plans/0001-lakehouse-architecture-outline.md`'s risk/fallback section — to be built when silver/gold modeling starts (Build Order steps 6-7).

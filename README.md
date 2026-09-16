@@ -10,7 +10,7 @@ Most "lakehouse" portfolio projects stop at DuckDB + Parquet + dbt. This one goe
 
 - Build a real medallion (bronze/silver/gold) lakehouse on Iceberg, not just files
 - Get hands-on practice with OpenTofu/Terraform-style infrastructure-as-code
-- Demonstrate genuine multi-engine interoperability: the same physical tables are readable from both **DuckDB** and (emulated) **AWS Athena**, because they're real Iceberg tables in a real catalog, not an engine-specific format
+- Demonstrate genuine multi-engine interoperability: the same physical tables are real Iceberg tables in a real catalog, not an engine-specific format, and are readable from both a fresh **DuckDB** session and **AWS Athena** (emulated) — see the note in the Architecture section on how the latter currently depends on a not-yet-merged upstream fix
 - Keep everything reproducible in Docker, with no cloud account or cost required to run it
 
 ## Architecture
@@ -21,17 +21,22 @@ raw CSV (S3 landing)
    ▼
 bronze (Iceberg, Glue DB: iceduck_bronze)     ← written via pyiceberg
    │
-   ▼   dbt (dbt-duckdb, attached to Glue as an Iceberg catalog)
+   ▼   dbt (dbt-duckdb) + a pyiceberg publish step
 silver (Iceberg, Glue DB: iceduck_silver)     ← staging / intermediate models
    │
    ▼
 gold (Iceberg, Glue DB: iceduck_gold)         ← dimensional marts (facts + dims)
    │
-   ├── queryable from DuckDB
-   └── queryable from Athena (emulated)
+   ├── queryable from a fresh DuckDB session (via iceberg_scan on the metadata
+   │   location Glue resolves — not a live catalog ATTACH; Floci doesn't
+   │   implement Glue's Iceberg REST Catalog endpoint, see ADR-0007)
+   └── queryable from Athena (emulated) — works today via a pinned fork build
+       with an unmerged upstream fix, see ADR-0008
 ```
 
-All storage lives in one S3 bucket (emulated via Floci); AWS Glue is the **single catalog** for every layer — there is no separate metadata database. See [`docs/plans/0001-lakehouse-architecture-outline.md`](docs/plans/0001-lakehouse-architecture-outline.md) for the full design rationale, including why DuckLake was considered and dropped in favor of this Iceberg-on-Glue design.
+All storage lives in one S3 bucket (emulated via Floci); AWS Glue is the **single catalog** for every layer — there is no separate metadata database. Every write path (bronze, and silver/gold once built) goes through `pyiceberg`'s `GlueCatalog`, not `dbt-duckdb`'s native Glue-Iceberg materialization — verified via a spike, see [ADR-0005](docs/adr/0005-bronze-pyiceberg-silver-gold-dbt-duckdb.md) and [ADR-0007](docs/adr/0007-iceberg-reads-via-glue-resolved-metadata-location.md). See [`docs/plans/0001-lakehouse-architecture-outline.md`](docs/plans/0001-lakehouse-architecture-outline.md) for the full design rationale, including why DuckLake was considered and dropped in favor of this Iceberg-on-Glue design.
+
+**Note on Athena support**: Floci's Athena emulation couldn't read genuine Iceberg tables out of the box (ADR-0007). We found, fixed, and submitted the root cause upstream — [floci-io/floci#3738](https://github.com/floci-io/floci/pull/3738) — and `docker/docker-compose.yml` currently builds Floci from that fix's commit rather than the official image so this project actually benefits from it now, pending merge (ADR-0008, with a revert TODO in `docs/TODO.md`).
 
 ## Tech stack
 
@@ -56,11 +61,12 @@ Early stage — architecture and build plan are defined, implementation is start
 ```
 docker/          Docker Compose (Floci, the local AWS emulator)
 infra/tofu/      OpenTofu IaC: S3 bucket, IAM, Glue databases, Athena workgroup
+scripts/         Standalone spike/verification scripts (not part of the pipeline)
 src/iceduck/     Python CLI + core logic (ingestion, Iceberg/Glue helpers, settings)
 products/         Per-entity ingestion config (Olist tables)
 dbt/iceduck/      dbt project: staging → intermediate → marts
 sample_data/      Dataset download + small committed fixtures for fast local runs
-docs/             Architecture notes and phased design/build plans
+docs/             Architecture notes, ADRs, and phased design/build plans
 tests/            Unit + integration tests
 ```
 
@@ -86,6 +92,9 @@ export AWS_ACCESS_KEY_ID=floci AWS_SECRET_ACCESS_KEY=floci \
 aws s3 ls                                        # iceduck-lakehouse
 aws glue get-database --name iceduck_bronze       # (and _silver, _gold)
 aws athena get-work-group --work-group iceduck
+
+# Optional: prove real Iceberg reads work through both engines
+uv run python scripts/glue_iceberg_spike.py
 ```
 
 See [`docs/plans/0002-opentofu-infra.md`](docs/plans/0002-opentofu-infra.md) for the infra design decisions and verification record.

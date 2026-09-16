@@ -20,3 +20,9 @@ infra/tofu/terraform.tfvars
 infra/tofu/*.tfplan
 infra/tofu/crash.log
 infra/tofu/crash.*.log
+
+# dbt
+dbt/iceduck/target/
+dbt/iceduck/logs/
+dbt/iceduck/dbt_packages/
+dbt/iceduck/.user.yml

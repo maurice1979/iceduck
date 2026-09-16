@@ -1,0 +1,11 @@
+iceduck:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: ":memory:"
+      secrets:
+        - type: iceberg
+          name: floci_iceberg_secret
+          client_id: "{{ env_var('AWS_ACCESS_KEY_ID') }}"
+          client_secret: "{{ env_var('AWS_SECRET_ACCESS_KEY') }}"

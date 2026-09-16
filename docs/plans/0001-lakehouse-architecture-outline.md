@@ -3,7 +3,7 @@
 Status: pending
 Date: 2026-09-15
 
-See [`docs/adr/`](../adr/) for the atomic decisions this outline led to: [ADR-0001](../adr/0001-iceberg-on-glue-catalog.md) (Iceberg on Glue), [ADR-0002](../adr/0002-floci-local-aws-emulator.md) (Floci), [ADR-0003](../adr/0003-opentofu-for-iac.md) (OpenTofu), [ADR-0004](../adr/0004-no-orchestrator.md) (no orchestrator), [ADR-0005](../adr/0005-bronze-pyiceberg-silver-gold-dbt-duckdb.md) (bronze/silver/gold write paths, still Proposed).
+See [`docs/adr/`](../adr/) for the atomic decisions this outline led to: [ADR-0001](../adr/0001-iceberg-on-glue-catalog.md) (Iceberg on Glue), [ADR-0002](../adr/0002-floci-local-aws-emulator.md) (Floci), [ADR-0003](../adr/0003-opentofu-for-iac.md) (OpenTofu), [ADR-0004](../adr/0004-no-orchestrator.md) (no orchestrator), [ADR-0005](../adr/0005-bronze-pyiceberg-silver-gold-dbt-duckdb.md) (bronze/silver/gold write paths, resolved by the spike in [`0003-iceberg-glue-spike.md`](0003-iceberg-glue-spike.md)), [ADR-0007](../adr/0007-iceberg-reads-via-glue-resolved-metadata-location.md) (how Iceberg reads actually work against Floci).
 
 ## Context
 

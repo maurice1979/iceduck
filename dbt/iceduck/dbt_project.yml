@@ -1,0 +1,9 @@
+name: "iceduck"
+version: "1.0.0"
+profile: "iceduck"
+
+model-paths: ["models"]
+clean-targets: ["target", "dbt_packages"]
+
+flags:
+  use_catalogs_v2: true

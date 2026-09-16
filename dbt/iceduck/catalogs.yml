@@ -1,0 +1,9 @@
+catalogs:
+  - name: glue_catalog
+    type: iceberg_rest
+    table_format: iceberg
+    config:
+      duckdb:
+        endpoint: "{{ env_var('AWS_ENDPOINT_URL') }}"
+        secret: floci_iceberg_secret
+        default_region: "{{ env_var('AWS_DEFAULT_REGION') }}"
