@@ -49,7 +49,7 @@ All storage lives in one S3 bucket (emulated via Floci); AWS Glue is the **singl
 | Local AWS emulation | [Floci](https://github.com/floci-io/floci) |
 | Infrastructure as code | [OpenTofu](https://opentofu.org/) |
 | Containerization | Docker / Docker Compose |
-| Dataset | [Olist Brazilian E-Commerce](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) |
+| Dataset | Synthetic EHR data via [Synthea™](https://synthetichealth.github.io/synthea/) ([Kaggle](https://www.kaggle.com/datasets/lucague/hospital-ehr-data-1171-patients-15-tables)) — patients, providers, organizations, medications, encounters, conditions |
 | Package management | [uv](https://docs.astral.sh/uv/) |
 
 ## Status
@@ -63,7 +63,7 @@ docker/          Docker Compose (Floci, the local AWS emulator)
 infra/tofu/      OpenTofu IaC: S3 bucket, IAM, Glue databases, Athena workgroup
 scripts/         Standalone spike/verification scripts (not part of the pipeline)
 src/iceduck/     Python CLI + core logic (ingestion, Iceberg/Glue helpers, settings)
-products/         Per-entity ingestion config (Olist tables)
+products/         Per-entity ingestion config (patients, providers, organizations, ...)
 dbt/iceduck/      dbt project: staging → intermediate → marts
 sample_data/      Dataset download + small committed fixtures for fast local runs
 docs/             Architecture notes, ADRs, and phased design/build plans
@@ -72,7 +72,7 @@ tests/            Unit + integration tests
 
 ## Getting started
 
-The infrastructure layer (S3 bucket, IAM role/policy, Glue databases, Athena workgroup) is runnable today. The rest of the pipeline (ingestion, dbt models) isn't built yet — see the build order in `docs/plans/0001-lakehouse-architecture-outline.md`.
+The infrastructure layer (S3 bucket, IAM role/policy, Glue databases, Athena workgroup) and raw data landing are runnable today. Bronze ingestion and dbt models aren't built yet — see the build order in `docs/plans/0001-lakehouse-architecture-outline.md`.
 
 Prerequisites: [Docker](https://www.docker.com/), [uv](https://docs.astral.sh/uv/), [OpenTofu](https://opentofu.org/) (`brew install opentofu`), AWS CLI (`brew install awscli`).
 
@@ -98,6 +98,17 @@ uv run python scripts/glue_iceberg_spike.py
 ```
 
 See [`docs/plans/0002-opentofu-infra.md`](docs/plans/0002-opentofu-infra.md) for the infra design decisions and verification record.
+
+Land the sample EHR data:
+
+```sh
+uv run python sample_data/health/download.py   # requires a Kaggle API token at ~/.kaggle/access_token
+uv run iceduck s3-upload-raw
+
+aws s3 ls s3://iceduck-lakehouse/raw/patients/   # (and providers, organizations, medications, encounters, conditions)
+```
+
+See [ADR-0009](docs/adr/0009-switch-dataset-to-synthea-ehr.md) for why this dataset was chosen over the originally-planned Olist e-commerce data.
 
 ## Learning notes
 

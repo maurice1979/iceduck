@@ -26,3 +26,6 @@ dbt/iceduck/target/
 dbt/iceduck/logs/
 dbt/iceduck/dbt_packages/
 dbt/iceduck/.user.yml
+
+# Sample data — only the small fixtures/ subset is committed
+sample_data/health/full/
