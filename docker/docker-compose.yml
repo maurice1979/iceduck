@@ -1,0 +1,17 @@
+
+services:
+  floci:
+    image: floci/floci:latest
+    container_name: floci
+    ports:
+      - "4566:4566"
+    volumes:
+      - floci-data:/var/lib/floci
+      - /var/run/docker.sock:/var/run/docker.sock   # Required for Lambda, ECS, RDS
+    environment:
+      - FLOCI_LOG_LEVEL=info
+      - FLOCI_DATA_DIR=/var/lib/floci
+      - FLOCI_STORAGE_MODE=persistent
+    restart: unless-stopped
+volumes:
+  floci-data:

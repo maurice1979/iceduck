@@ -1,0 +1,10 @@
+# Copy to terraform.tfvars and adjust if needed. Defaults already match
+# .env.template, so most people running against Floci locally won't need
+# a terraform.tfvars at all.
+
+aws_region             = "eu-west-1"
+floci_endpoint         = "http://localhost:4566"
+floci_access_key       = "floci"
+floci_secret_key       = "floci"
+bucket_name            = "iceduck-lakehouse"
+athena_workgroup_name  = "iceduck"
