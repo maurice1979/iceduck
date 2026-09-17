@@ -15,6 +15,8 @@ Most "lakehouse" portfolio projects stop at DuckDB + Parquet + dbt. This one goe
 
 ## Architecture
 
+A draw.io diagram of the full pipeline is at [`docs/architecture-diagram.drawio`](docs/architecture-diagram.drawio) (open at [diagrams.net](https://app.diagrams.net/) or with a draw.io editor extension).
+
 ```
 raw CSV (S3 landing)
    │
