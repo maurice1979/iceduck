@@ -19,6 +19,8 @@ The spike in [`docs/plans/0003-iceberg-glue-spike.md`](plans/0003-iceberg-glue-s
 
 This has since been fixed and submitted upstream as [floci-io/floci#3738](https://github.com/floci-io/floci/pull/3738) (fixing [issue #3737](https://github.com/floci-io/floci/issues/3737)) — implemented by Claude, verified independently twice against live instances (including reproducing the exact orphaned-file/multi-snapshot scenario from ADR-0007 and confirming correct manifest-based resolution, not a glob). IceDuck currently runs on a pinned fork build with this fix included — see the "Pending upstream merge" item above and [ADR-0008](adr/0008-pin-floci-fork-for-athena-iceberg-fix.md).
 
+**Build Order step 8, done**: with the gold layer built, this was verified against real project data, not just the spike's throwaway table — an Athena query against `iceduck_gold.fct_encounters` and a fresh DuckDB `iceberg_scan` session against the same table returned identical row counts and identical row content. See [`docs/plans/0006-athena-duckdb-interop.md`](plans/0006-athena-duckdb-interop.md). The only remaining item is the "Pending upstream merge" one above — switching off the pinned fork once #3738 ships in a release.
+
 Remaining open question, independent of whether/when #3738 merges: **Floci still has no Iceberg REST Catalog endpoint for Glue** (blocks `dbt-duckdb`'s native write path and a literal DuckDB `ATTACH` to Glue — see ADR-0005 and ADR-0007). Re-check upstream periodically; if it's ever added, revisit `ICEBERG_WRITE_MODE=duckdb_native` as a real option.
 
 ### AWS Lake Formation

@@ -10,7 +10,7 @@ Most "lakehouse" portfolio projects stop at DuckDB + Parquet + dbt. This one goe
 
 - Build a real medallion (bronze/silver/gold) lakehouse on Iceberg, not just files
 - Get hands-on practice with OpenTofu/Terraform-style infrastructure-as-code
-- Demonstrate genuine multi-engine interoperability: the same physical tables are real Iceberg tables in a real catalog, not an engine-specific format, and are readable from both a fresh **DuckDB** session and **AWS Athena** (emulated) — see the note in the Architecture section on how the latter currently depends on a not-yet-merged upstream fix
+- Demonstrate genuine multi-engine interoperability: the same physical tables are real Iceberg tables in a real catalog, not an engine-specific format, and are readable from both a fresh **DuckDB** session and **AWS Athena** (emulated) — verified end-to-end against a real gold table (Build Order step 8, [`docs/plans/0006-athena-duckdb-interop.md`](docs/plans/0006-athena-duckdb-interop.md)); see the note in the Architecture section on the pinned, not-yet-merged upstream fix this depends on
 - Keep everything reproducible in Docker, with no cloud account or cost required to run it
 
 ## Architecture
@@ -33,12 +33,14 @@ gold (Iceberg, Glue DB: iceduck_gold)         ← dimensional marts (facts + dim
    │   location Glue resolves — not a live catalog ATTACH; Floci doesn't
    │   implement Glue's Iceberg REST Catalog endpoint, see ADR-0007)
    └── queryable from Athena (emulated) — works today via a pinned fork build
-       with an unmerged upstream fix, see ADR-0008
+       with an unmerged upstream fix, see ADR-0008; verified against a real
+       gold table (fct_encounters, 358/358 rows matching a fresh DuckDB read
+       exactly, same content) — see docs/plans/0006-athena-duckdb-interop.md
 ```
 
-All storage lives in one S3 bucket (emulated via Floci); AWS Glue is the **single catalog** for every layer — there is no separate metadata database. Every write path (bronze, silver, and gold once built) goes through `pyiceberg`'s `GlueCatalog`, not `dbt-duckdb`'s native Glue-Iceberg materialization — verified via a spike, see [ADR-0005](docs/adr/0005-bronze-pyiceberg-silver-gold-dbt-duckdb.md) and [ADR-0007](docs/adr/0007-iceberg-reads-via-glue-resolved-metadata-location.md). See [`docs/plans/0001-lakehouse-architecture-outline.md`](docs/plans/0001-lakehouse-architecture-outline.md) for the full design rationale, including why DuckLake was considered and dropped in favor of this Iceberg-on-Glue design.
+All storage lives in one S3 bucket (emulated via Floci); AWS Glue is the **single catalog** for every layer — there is no separate metadata database. Every write path (bronze, silver, and gold) goes through `pyiceberg`'s `GlueCatalog`, not `dbt-duckdb`'s native Glue-Iceberg materialization — verified via a spike, see [ADR-0005](docs/adr/0005-bronze-pyiceberg-silver-gold-dbt-duckdb.md) and [ADR-0007](docs/adr/0007-iceberg-reads-via-glue-resolved-metadata-location.md). See [`docs/plans/0001-lakehouse-architecture-outline.md`](docs/plans/0001-lakehouse-architecture-outline.md) for the full design rationale, including why DuckLake was considered and dropped in favor of this Iceberg-on-Glue design.
 
-**Note on Athena support**: Floci's Athena emulation couldn't read genuine Iceberg tables out of the box (ADR-0007). We found, fixed, and submitted the root cause upstream — [floci-io/floci#3738](https://github.com/floci-io/floci/pull/3738) — and `docker/docker-compose.yml` currently builds Floci from that fix's commit rather than the official image so this project actually benefits from it now, pending merge (ADR-0008, with a revert TODO in `docs/TODO.md`).
+**Note on Athena support**: Floci's Athena emulation couldn't read genuine Iceberg tables out of the box (ADR-0007). We found, fixed, and submitted the root cause upstream — [floci-io/floci#3738](https://github.com/floci-io/floci/pull/3738) — and `docker/docker-compose.yml` currently builds Floci from that fix's commit rather than the official image so this project actually benefits from it now, pending merge (ADR-0008, with a revert TODO in `docs/TODO.md`). With the gold layer built, this was verified for real, not just theoretically: an Athena query against `iceduck_gold.fct_encounters` and a fresh DuckDB `iceberg_scan` session against the same table return identical row counts and identical row content — see [`docs/plans/0006-athena-duckdb-interop.md`](docs/plans/0006-athena-duckdb-interop.md).
 
 ## Tech stack
 
@@ -56,7 +58,7 @@ All storage lives in one S3 bucket (emulated via Floci); AWS Glue is the **singl
 
 ## Status
 
-The full medallion pipeline is built and verified end-to-end: infra, bronze ingestion (6 EHR entities), the silver staging layer, and the gold dimensional model (`dim_patient`, `dim_provider`, `dim_organization`, `dim_date`, `fct_encounters`, `fct_medications`, `fct_conditions`) — all real Iceberg tables in Glue, with row counts reconciled at every layer. Remaining build-order items are polish: a Makefile wrapper for the full pipeline, unit/integration tests, and the Athena/fresh-DuckDB interoperability check (Build Order step 8). See [`docs/plans/`](docs/plans/) for the phased build order and design decisions as they're made.
+The full medallion pipeline is built and verified end-to-end: infra, bronze ingestion (6 EHR entities), the silver staging layer, and the gold dimensional model (`dim_patient`, `dim_provider`, `dim_organization`, `dim_date`, `fct_encounters`, `fct_medications`, `fct_conditions`) — all real Iceberg tables in Glue, with row counts reconciled at every layer. The project's central multi-engine interoperability claim is also verified for real: Athena and a fresh DuckDB session reading the same gold table return identical results (Build Order step 8). Remaining build-order items are polish: a Makefile wrapper for the full pipeline and unit/integration tests. See [`docs/plans/`](docs/plans/) for the phased build order and design decisions as they're made.
 
 ## Repository structure
 
@@ -74,7 +76,7 @@ tests/            Unit + integration tests
 
 ## Getting started
 
-The infrastructure layer (S3 bucket, IAM role/policy, Glue databases, Athena workgroup) and raw data landing are runnable today. Bronze ingestion and dbt models aren't built yet — see the build order in `docs/plans/0001-lakehouse-architecture-outline.md`.
+The infrastructure layer (S3 bucket, IAM role/policy, Glue databases, Athena workgroup), raw data landing, and the full bronze → silver → gold pipeline are all runnable today — see the build order in `docs/plans/0001-lakehouse-architecture-outline.md`.
 
 Prerequisites: [Docker](https://www.docker.com/), [uv](https://docs.astral.sh/uv/), [OpenTofu](https://opentofu.org/) (`brew install opentofu`), AWS CLI (`brew install awscli`).
 
