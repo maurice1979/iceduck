@@ -21,8 +21,8 @@ raw CSV (S3 landing)
    ▼
 bronze (Iceberg, Glue DB: iceduck_bronze)     ← written via pyiceberg
    │
-   ▼   dbt (dbt-duckdb) + a pyiceberg publish step
-silver (Iceberg, Glue DB: iceduck_silver)     ← staging / intermediate models
+   ▼   dbt (dbt-duckdb, external Parquet) + a pyiceberg publish step
+silver (Iceberg, Glue DB: iceduck_silver)     ← staging models (1:1 with bronze, built)
    │
    ▼
 gold (Iceberg, Glue DB: iceduck_gold)         ← dimensional marts (facts + dims)
@@ -34,7 +34,7 @@ gold (Iceberg, Glue DB: iceduck_gold)         ← dimensional marts (facts + dim
        with an unmerged upstream fix, see ADR-0008
 ```
 
-All storage lives in one S3 bucket (emulated via Floci); AWS Glue is the **single catalog** for every layer — there is no separate metadata database. Every write path (bronze, and silver/gold once built) goes through `pyiceberg`'s `GlueCatalog`, not `dbt-duckdb`'s native Glue-Iceberg materialization — verified via a spike, see [ADR-0005](docs/adr/0005-bronze-pyiceberg-silver-gold-dbt-duckdb.md) and [ADR-0007](docs/adr/0007-iceberg-reads-via-glue-resolved-metadata-location.md). See [`docs/plans/0001-lakehouse-architecture-outline.md`](docs/plans/0001-lakehouse-architecture-outline.md) for the full design rationale, including why DuckLake was considered and dropped in favor of this Iceberg-on-Glue design.
+All storage lives in one S3 bucket (emulated via Floci); AWS Glue is the **single catalog** for every layer — there is no separate metadata database. Every write path (bronze, silver, and gold once built) goes through `pyiceberg`'s `GlueCatalog`, not `dbt-duckdb`'s native Glue-Iceberg materialization — verified via a spike, see [ADR-0005](docs/adr/0005-bronze-pyiceberg-silver-gold-dbt-duckdb.md) and [ADR-0007](docs/adr/0007-iceberg-reads-via-glue-resolved-metadata-location.md). See [`docs/plans/0001-lakehouse-architecture-outline.md`](docs/plans/0001-lakehouse-architecture-outline.md) for the full design rationale, including why DuckLake was considered and dropped in favor of this Iceberg-on-Glue design.
 
 **Note on Athena support**: Floci's Athena emulation couldn't read genuine Iceberg tables out of the box (ADR-0007). We found, fixed, and submitted the root cause upstream — [floci-io/floci#3738](https://github.com/floci-io/floci/pull/3738) — and `docker/docker-compose.yml` currently builds Floci from that fix's commit rather than the official image so this project actually benefits from it now, pending merge (ADR-0008, with a revert TODO in `docs/TODO.md`).
 
@@ -54,7 +54,7 @@ All storage lives in one S3 bucket (emulated via Floci); AWS Glue is the **singl
 
 ## Status
 
-Early stage — architecture and build plan are defined, implementation is starting. See [`docs/plans/`](docs/plans/) for the phased build order and design decisions as they're made.
+Infra, bronze ingestion, and the silver staging layer are built and verified end-to-end (all 6 EHR entities, real Iceberg tables in `iceduck_bronze`/`iceduck_silver`). Gold (dbt marts: dims/facts) is next. See [`docs/plans/`](docs/plans/) for the phased build order and design decisions as they're made.
 
 ## Repository structure
 
@@ -109,6 +109,32 @@ aws s3 ls s3://iceduck-lakehouse/raw/patients/   # (and providers, organizations
 ```
 
 See [ADR-0009](docs/adr/0009-switch-dataset-to-synthea-ehr.md) for why this dataset was chosen over the originally-planned Olist e-commerce data.
+
+Build bronze, then silver:
+
+```sh
+uv run iceduck ingest-all     # raw/ CSVs -> real Iceberg tables in iceduck_bronze (pyiceberg)
+uv run iceduck build-silver   # dbt staging models -> real Iceberg tables in iceduck_silver
+
+aws glue get-tables --database-name iceduck_bronze --query 'TableList[].Name'
+aws glue get-tables --database-name iceduck_silver --query 'TableList[].Name'
+```
+
+See [`docs/plans/0004-dbt-silver-layer.md`](docs/plans/0004-dbt-silver-layer.md) and [ADR-0010](docs/adr/0010-dbt-silver-write-and-read-mechanism.md) for how the silver read/write mechanism works (DuckDB can't live-attach to Glue against Floci — see ADR-0007 — so dbt resolves each bronze table's metadata location via Glue and reads it with `iceberg_scan`; writes go out as external Parquet, then a `pyiceberg` publish step promotes that into a real Iceberg table, mirroring bronze).
+
+Inspect any table directly with DuckDB (no catalog `ATTACH` — see ADR-0007 for why):
+
+```sh
+duckdb -ui   # or the duckdb CLI; either way:
+```
+```sql
+INSTALL httpfs; LOAD httpfs; INSTALL iceberg; LOAD iceberg;
+CREATE SECRET floci_s3 (TYPE s3, KEY_ID 'floci', SECRET 'floci', REGION 'eu-west-1',
+                         ENDPOINT 'localhost:4566', URL_STYLE 'path', USE_SSL false);
+-- metadata_location from: aws glue get-table --database-name iceduck_silver --name stg_patients \
+--                          --query 'Table.Parameters.metadata_location' --output text
+SELECT * FROM iceberg_scan('<metadata_location>') LIMIT 10;
+```
 
 ## Learning notes
 

@@ -4,8 +4,14 @@ iceduck:
     dev:
       type: duckdb
       path: ":memory:"
+      extensions:
+        - httpfs
+        - iceberg
       secrets:
-        - type: iceberg
-          name: floci_iceberg_secret
-          client_id: "{{ env_var('AWS_ACCESS_KEY_ID') }}"
-          client_secret: "{{ env_var('AWS_SECRET_ACCESS_KEY') }}"
+        - type: s3
+          key_id: "{{ env_var('AWS_ACCESS_KEY_ID') }}"
+          secret: "{{ env_var('AWS_SECRET_ACCESS_KEY') }}"
+          region: "{{ env_var('AWS_DEFAULT_REGION') }}"
+          endpoint: "{{ env_var('AWS_ENDPOINT_URL') | replace('http://', '') | replace('https://', '') }}"
+          url_style: path
+          use_ssl: false
