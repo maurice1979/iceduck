@@ -13,4 +13,4 @@ select
     "LAT" as latitude,
     "LON" as longitude,
     "UTILIZATION" as utilization
-from {{ bronze_scan('providers') }}
+from {{ iceberg_source('bronze', 'providers') }}

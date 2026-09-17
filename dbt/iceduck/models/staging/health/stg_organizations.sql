@@ -12,4 +12,4 @@ select
     "LON" as longitude,
     "REVENUE" as revenue,
     "UTILIZATION" as utilization
-from {{ bronze_scan('organizations') }}
+from {{ iceberg_source('bronze', 'organizations') }}

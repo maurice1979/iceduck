@@ -26,4 +26,4 @@ select
     "LON" as longitude,
     "HEALTHCARE_EXPENSES" as healthcare_expenses,
     "HEALTHCARE_COVERAGE" as healthcare_coverage
-from {{ bronze_scan('patients') }}
+from {{ iceberg_source('bronze', 'patients') }}

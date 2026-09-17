@@ -16,4 +16,4 @@ select
     "BASE_ENCOUNTER_COST" as base_encounter_cost,
     "TOTAL_CLAIM_COST" as total_claim_cost,
     "PAYER_COVERAGE" as payer_coverage
-from {{ bronze_scan('encounters') }}
+from {{ iceberg_source('bronze', 'encounters') }}
