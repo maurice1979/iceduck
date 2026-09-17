@@ -14,4 +14,4 @@ select
     "PAYER_COVERAGE" as payer_coverage,
     "TOTALCOST" as total_cost,
     "DISPENSES" as dispenses
-from {{ bronze_scan('medications') }}
+from {{ iceberg_source('bronze', 'medications') }}

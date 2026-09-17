@@ -25,7 +25,7 @@ bronze (Iceberg, Glue DB: iceduck_bronze)     ← written via pyiceberg
 silver (Iceberg, Glue DB: iceduck_silver)     ← staging models (1:1 with bronze, built)
    │
    ▼
-gold (Iceberg, Glue DB: iceduck_gold)         ← dimensional marts (facts + dims)
+gold (Iceberg, Glue DB: iceduck_gold)         ← dimensional marts (facts + dims, built)
    │
    ├── queryable from a fresh DuckDB session (via iceberg_scan on the metadata
    │   location Glue resolves — not a live catalog ATTACH; Floci doesn't
@@ -54,7 +54,7 @@ All storage lives in one S3 bucket (emulated via Floci); AWS Glue is the **singl
 
 ## Status
 
-Infra, bronze ingestion, and the silver staging layer are built and verified end-to-end (all 6 EHR entities, real Iceberg tables in `iceduck_bronze`/`iceduck_silver`). Gold (dbt marts: dims/facts) is next. See [`docs/plans/`](docs/plans/) for the phased build order and design decisions as they're made.
+The full medallion pipeline is built and verified end-to-end: infra, bronze ingestion (6 EHR entities), the silver staging layer, and the gold dimensional model (`dim_patient`, `dim_provider`, `dim_organization`, `dim_date`, `fct_encounters`, `fct_medications`, `fct_conditions`) — all real Iceberg tables in Glue, with row counts reconciled at every layer. Remaining build-order items are polish: a Makefile wrapper for the full pipeline, unit/integration tests, and the Athena/fresh-DuckDB interoperability check (Build Order step 8). See [`docs/plans/`](docs/plans/) for the phased build order and design decisions as they're made.
 
 ## Repository structure
 
@@ -110,17 +110,19 @@ aws s3 ls s3://iceduck-lakehouse/raw/patients/   # (and providers, organizations
 
 See [ADR-0009](docs/adr/0009-switch-dataset-to-synthea-ehr.md) for why this dataset was chosen over the originally-planned Olist e-commerce data.
 
-Build bronze, then silver:
+Build bronze, then silver, then gold:
 
 ```sh
 uv run iceduck ingest-all     # raw/ CSVs -> real Iceberg tables in iceduck_bronze (pyiceberg)
 uv run iceduck build-silver   # dbt staging models -> real Iceberg tables in iceduck_silver
+uv run iceduck build-gold     # dbt marts (dims + facts) -> real Iceberg tables in iceduck_gold
 
 aws glue get-tables --database-name iceduck_bronze --query 'TableList[].Name'
 aws glue get-tables --database-name iceduck_silver --query 'TableList[].Name'
+aws glue get-tables --database-name iceduck_gold --query 'TableList[].Name'
 ```
 
-See [`docs/plans/0004-dbt-silver-layer.md`](docs/plans/0004-dbt-silver-layer.md) and [ADR-0010](docs/adr/0010-dbt-silver-write-and-read-mechanism.md) for how the silver read/write mechanism works (DuckDB can't live-attach to Glue against Floci — see ADR-0007 — so dbt resolves each bronze table's metadata location via Glue and reads it with `iceberg_scan`; writes go out as external Parquet, then a `pyiceberg` publish step promotes that into a real Iceberg table, mirroring bronze).
+See [`docs/plans/0004-dbt-silver-layer.md`](docs/plans/0004-dbt-silver-layer.md) and [ADR-0010](docs/adr/0010-dbt-silver-write-and-read-mechanism.md) for how the silver (and, by the same mechanism, gold) read/write path works (DuckDB can't live-attach to Glue against Floci — see ADR-0007 — so dbt resolves each source table's metadata location via Glue and reads it with `iceberg_scan`; writes go out as external Parquet, then a `pyiceberg` publish step promotes that into a real Iceberg table, mirroring bronze). Gold's star schema (`dim_patient`, `dim_provider`, `dim_organization`, `dim_date` + `fct_encounters`, `fct_medications`, `fct_conditions`) is documented in [`docs/plans/0005-dbt-gold-layer.md`](docs/plans/0005-dbt-gold-layer.md).
 
 Inspect any table directly with DuckDB (no catalog `ATTACH` — see ADR-0007 for why):
 

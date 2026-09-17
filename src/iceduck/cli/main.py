@@ -114,5 +114,60 @@ def build_silver():
         click.echo(f"{silver_table}: {rows} rows -> {GLUE_DATABASE_SILVER}.{silver_table}")
 
 
+GOLD_MART_MODELS = [
+    "dim_patient",
+    "dim_provider",
+    "dim_organization",
+    "dim_date",
+    "fct_encounters",
+    "fct_medications",
+    "fct_conditions",
+]
+SILVER_TABLES_FOR_MARTS = [
+    "stg_patients",
+    "stg_providers",
+    "stg_organizations",
+    "stg_encounters",
+    "stg_medications",
+    "stg_conditions",
+]
+
+
+@cli.command("build-gold")
+def build_gold():
+    """Run dbt marts (dims + facts) against iceduck_silver and publish their
+    output as Iceberg tables in iceduck_gold."""
+    locations = resolve_metadata_locations(GLUE_DATABASE_SILVER, SILVER_TABLES_FOR_MARTS)
+
+    env = os.environ.copy()
+    env["AWS_ACCESS_KEY_ID"] = settings.aws_access_key_id
+    env["AWS_SECRET_ACCESS_KEY"] = settings.aws_secret_access_key
+    env["AWS_DEFAULT_REGION"] = settings.aws_default_region
+    env["AWS_ENDPOINT_URL"] = settings.aws_endpoint_url
+
+    (DBT_DIR / "target" / "gold").mkdir(parents=True, exist_ok=True)
+
+    subprocess.run(
+        [
+            "dbt",
+            "build",
+            "--select",
+            "marts.core",
+            "--profiles-dir",
+            ".",
+            "--vars",
+            json.dumps({"silver_metadata_locations": locations}),
+        ],
+        cwd=DBT_DIR,
+        env=env,
+        check=True,
+    )
+
+    for model in GOLD_MART_MODELS:
+        parquet_path = DBT_DIR / "target" / "gold" / f"{model}.parquet"
+        rows = publish_parquet(parquet_path, GLUE_DATABASE_GOLD, model)
+        click.echo(f"{model}: {rows} rows -> {GLUE_DATABASE_GOLD}.{model}")
+
+
 if __name__ == "__main__":
     cli()

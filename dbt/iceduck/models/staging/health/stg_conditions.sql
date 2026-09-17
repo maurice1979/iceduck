@@ -7,4 +7,4 @@ select
     "DESCRIPTION" as description,
     "START" as started_on,
     "STOP" as stopped_on
-from {{ bronze_scan('conditions') }}
+from {{ iceberg_source('bronze', 'conditions') }}
