@@ -9,9 +9,8 @@ from pathlib import Path
 import pyarrow as pa
 import pyarrow.csv as pv
 import yaml
-from pyiceberg.exceptions import NoSuchTableError
 
-from iceduck.core.iceberg_catalog import get_glue_catalog
+from iceduck.core.iceberg_publish import publish_table
 from iceduck.core.s3 import get_s3_client
 from iceduck.core.settings import GLUE_DATABASE_BRONZE, settings
 
@@ -84,14 +83,4 @@ def ingest_product(product: Product) -> int:
     """Read a product's raw CSV from S3 and write it as an Iceberg table in
     iceduck_bronze. Returns the row count written."""
     table_data = _read_raw_csv(product)
-
-    catalog = get_glue_catalog()
-    identifier = (GLUE_DATABASE_BRONZE, product.bronze_table)
-    try:
-        catalog.drop_table(identifier)
-    except NoSuchTableError:
-        pass
-
-    iceberg_table = catalog.create_table(identifier, schema=table_data.schema)
-    iceberg_table.append(table_data)
-    return table_data.num_rows
+    return publish_table(table_data, GLUE_DATABASE_BRONZE, product.bronze_table)

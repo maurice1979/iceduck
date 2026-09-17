@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: stg_patients
+    columns:
+      - name: id
+        tests: [not_null, unique]
+  - name: stg_providers
+    columns:
+      - name: id
+        tests: [not_null, unique]
+  - name: stg_organizations
+    columns:
+      - name: id
+        tests: [not_null, unique]
+  - name: stg_encounters
+    columns:
+      - name: id
+        tests: [not_null, unique]
+      - name: patient_id
+        tests: [not_null]
+  - name: stg_medications
+    columns:
+      - name: patient_id
+        tests: [not_null]
+      - name: encounter_id
+        tests: [not_null]
+  - name: stg_conditions
+    columns:
+      - name: patient_id
+        tests: [not_null]
+      - name: encounter_id
+        tests: [not_null]
