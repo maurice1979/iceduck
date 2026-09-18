@@ -151,6 +151,24 @@ CREATE SECRET floci_s3 (TYPE s3, KEY_ID 'floci', SECRET 'floci', REGION 'eu-west
 SELECT * FROM iceberg_scan('<metadata_location>') LIMIT 10;
 ```
 
+## Browsing data with floci-dash
+
+[floci-dash](https://github.com/ofsazib/floci-dash) is a third-party, AWS-console-style GUI for Floci — real Glue database/table browsing with schema drill-down, plus an Athena "Run Query" SQL editor.
+
+```sh
+docker pull ghcr.io/ofsazib/floci-dash:latest
+docker run -d --name floci-dash -p 9877:3000 \
+    -e FLOCI_URL=http://host.docker.internal:4566 -e AWS_REGION=eu-west-1 \
+    ghcr.io/ofsazib/floci-dash:latest
+```
+
+Open `http://localhost:9877`. Two things to know before running a query, both genuine Floci quirks confirmed against this project's data, not floci-dash bugs:
+
+1. **A semicolon is not needed in the query — and breaks it.** Floci wraps your query as `COPY (<your SQL>) TO 's3://...'` internally; a trailing `;` breaks that wrapper with a parser error. `select * from dim_organization limit 10` — no `;`.
+2. **Set the "Database" field**, or fully-qualify table names (`iceduck_gold.dim_organization`) — a bare table name with no database set fails with a "table does not exist" error even though it exists.
+
+See [`docs/TODO.md`](docs/TODO.md) for the full finding (the semicolon issue is a real Floci bug, same category as ADR-0007/0008).
+
 ## Testing
 
 ```sh

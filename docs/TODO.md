@@ -37,20 +37,24 @@ Today, `infra/tofu/iam.tf` grants direct Glue/S3/Athena IAM policy actions to a 
 
 Record the decision (pursue or skip, and why) in a new `docs/plans/000X-*.md` if this is ever picked up, per the project's convention of documenting *why* non-trivial decisions were made.
 
-### A GUI for browsing tables (get users familiar with the data)
+### A GUI for browsing tables (get users familiar with the data) — done, via floci-dash
 
-DBeaver's Amazon Athena JDBC driver got real progress in one session: `AthenaEndpoint`/`S3Endpoint`/`WorkGroup` driver properties confirmed reaching Floci and actually running a query — but then hit a wall. `ResultFetcher=auto` (the default) needs a `.csv.metadata` S3 sidecar file that Floci's Athena emulation doesn't produce; the alternative, `ResultFetcher=GetQueryResultsStream`, avoids that but calls AWS's separate streaming API endpoint, which needed `AthenaStreamingEndpoint` pointed at Floci too — left untested whether Floci implements that streaming API at all. **Parked, not proven impossible.**
+DBeaver's Amazon Athena JDBC driver got real progress in one session: `AthenaEndpoint`/`S3Endpoint`/`WorkGroup` driver properties confirmed reaching Floci and actually running a query — but then hit a wall. `ResultFetcher=auto` (the default) needs a `.csv.metadata` S3 sidecar file that Floci's Athena emulation doesn't produce; the alternative, `ResultFetcher=GetQueryResultsStream`, avoids that but calls AWS's separate streaming API endpoint, which needed `AthenaStreamingEndpoint` pointed at Floci too — left untested whether Floci implements that streaming API at all. **Parked, not proven impossible**, but superseded by the option below.
 
-What works today (`duckdb -ui`, documented in the README) requires manually resolving each table's `metadata_location` via `aws glue get-table` before every query — real, but no catalog tree, no click-to-browse.
+Floci's own official `floci-ui` console (bundled with the Floci install, runs at `http://localhost:4500`) was also checked — it's a service-status dashboard (which of Floci's 21 emulated services are available, resource counts per service), with no Glue/Athena-specific pages at all. Not useful for this.
 
-Three directions, either worth picking up:
-- **Cheap, reuses proven mechanism**: a small `iceduck` CLI command that resolves every bronze/silver/gold table's current metadata location and creates named views in a local persistent DuckDB file, then launches `duckdb -ui` against it. Turns the existing resolve-then-`iceberg_scan` pattern (ADR-0007) into a real catalog tree without any new tool.
-- **Finish the DBeaver path**: pick the `AthenaStreamingEndpoint` experiment back up and see whether Floci's streaming API works at all; if not, that's a genuine Floci gap worth documenting (in the spirit of ADR-0007/0008) rather than a DBeaver misconfiguration.
-- **[floci-dash](https://github.com/ofsazib/floci-dash)**: a Docker-based, AWS-console-style admin dashboard for Floci (React + Cloudscape frontend), with real Glue support (database/table browsing, schema drill-down) and Athena support — though its documented Athena feature set is "work groups, query executions (list/get/stop), data catalogs, databases, table metadata," which reads as execution-management rather than a SQL editor for submitting new ad hoc queries. Worth trying hands-on for browsing the Glue catalog structure (what tables/columns exist across `iceduck_bronze`/`_silver`/`_gold`) even if it doesn't end up replacing DuckDB for actually querying row data.
+**Adopted: [floci-dash](https://github.com/ofsazib/floci-dash)** — a third-party, Docker-based, AWS-console-style admin dashboard for Floci (React + Cloudscape frontend). Real Glue database/table browsing with schema drill-down, and — better than its own docs suggested — a working "Run Query" Athena SQL editor, not just execution-management. Two non-obvious things needed to actually get results back, both confirmed live against this project's data and worth knowing before using it:
 
-### dbt docs site
+1. **Strip trailing semicolons from every query.** Floci's Athena emulation executes queries by wrapping them as `COPY (<your SQL>) TO 's3://...'` via its internal `floci-duck` sidecar, and doesn't strip a trailing `;` before embedding it — `select * from dim_organization limit 10;` fails with `Parser Error: syntax error at or near ";"`; the same query without the `;` succeeds. **This is a genuine Floci bug** (same category of finding as ADR-0007/0008), not a floci-dash issue — worth fixing upstream if anyone picks that up, same pattern as the Iceberg-read fix in ADR-0008.
+2. **Fill in the "Database" field, or fully-qualify table names.** floci-dash's Run Query form has a "Database (optional)" field that isn't actually optional in practice — leaving it blank and using a bare table name (`select * from dim_organization`) fails with `Catalog Error: Table with name dim_organization does not exist!` (it suggests the fix itself: `iceduck_gold.dim_organization`). Either set Database to `iceduck_bronze`/`iceduck_silver`/`iceduck_gold` as appropriate, or fully-qualify every table reference in the SQL.
 
-`dbt docs generate` + `dbt docs serve` renders a full model DAG (bronze → staging → marts) plus schema and test coverage, sourced from the project's existing `dbt/iceduck/models/staging/health/_health__models.yml` and `dbt/iceduck/models/marts/core/_core__models.yml` — both already exist with real test coverage, just no `description:` fields written yet. Structurally ready today; cheapest of these three items to pick up. Would need: model/column descriptions added to those two YAML files, then `dbt docs generate && dbt docs serve` (maybe worth a `make dbt-docs` target).
+Setup: see the README's "Browsing data with floci-dash" section.
+
+The `iceduck` CLI + local-persistent-DuckDB-file idea (pre-resolve every table into named views, launch `duckdb -ui` against it, no third-party tool) remains a viable no-workarounds alternative if floci-dash ever stops being satisfactory — not built, since floci-dash covers the need today.
+
+### dbt docs site — done
+
+`dbt docs generate` + `dbt docs serve` renders the full model DAG (bronze sources → 6 staging models → 7 mart models) plus schema and test coverage. See [`docs/plans/0009-dbt-docs.md`](plans/0009-dbt-docs.md) — two real bugs were found and fixed getting this working (a hard `var()` lookup blocking `dbt docs generate` entirely, and the DAG initially rendering as 13 disconnected nodes since the project's custom `iceberg_source()` macro bypasses `ref()`/`source()`). Run via `make dbt-docs`.
 
 ### Analyst-facing dashboard
 
