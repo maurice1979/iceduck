@@ -1,4 +1,4 @@
-.PHONY: floci-up floci-down infra-init infra-validate infra-plan infra-apply infra-destroy raw ingest dbt demo reset
+.PHONY: floci-up floci-down infra-init infra-validate infra-plan infra-apply infra-destroy raw ingest dbt demo reset test test-integration
 
 floci-up:
 	docker compose -f docker/docker-compose.yml up -d --wait
@@ -51,3 +51,11 @@ reset:
 	rm -rf infra/tofu/.terraform infra/tofu/terraform.tfstate infra/tofu/terraform.tfstate.backup
 	rm -rf dbt/iceduck/target dbt/iceduck/logs
 	@echo "Reset complete: Floci stopped and wiped, infra state and dbt build artifacts cleared."
+
+test:
+	uv run pytest tests/unit
+
+# Requires a running Floci with infra applied (`make demo` first) — writes
+# and drops real Iceberg tables, and rebuilds bronze/silver/gold.
+test-integration:
+	ICEDUCK_IT=1 uv run pytest tests/integration

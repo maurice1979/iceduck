@@ -90,7 +90,7 @@ Delete the stub `main.py` once `src/iceduck/cli/main.py` + a `[project.scripts]`
 7. dbt marts → gold (Iceberg). **Verify**: `aws glue get-tables --database-name iceduck_gold` shows all dims/facts with correct schemas. ✅ Done — see [`docs/plans/0005-dbt-gold-layer.md`](0005-dbt-gold-layer.md).
 8. Athena + fresh-DuckDB interoperability verify. **Verify**: an Athena query against a gold fact table and a fresh DuckDB session reading the same table both return the same row count. ✅ Done — see [`docs/plans/0006-athena-duckdb-interop.md`](0006-athena-duckdb-interop.md).
 9. Makefile (`demo`, `reset`, `infra-up/apply/destroy`, `ingest`, `dbt`). **Verify**: `make demo` runs unattended end-to-end on fixture data. ✅ Done — see [`docs/plans/0007-makefile-pipeline.md`](0007-makefile-pipeline.md).
-10. Tests (`unit/` + `integration/` gated by `ICEDUCK_IT=1`). **Verify**: both pytest runs green.
+10. Tests (`unit/` + `integration/` gated by `ICEDUCK_IT=1`). **Verify**: both pytest runs green. ✅ Done — see [`docs/plans/0008-tests.md`](0008-tests.md).
 11. Docs (README quickstart, CLAUDE.md, `docs/architecture.md`, `docs/plans/*`, `docs/TODO.md`). **Verify**: a fresh clone + README quickstart reproduces `make demo`.
 
 ## Critical Files
