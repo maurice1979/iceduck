@@ -15,7 +15,7 @@ Most "lakehouse" portfolio projects stop at DuckDB + Parquet + dbt. This one goe
 
 ## Architecture
 
-A draw.io diagram of the full pipeline is at [`docs/architecture-diagram.drawio`](docs/architecture-diagram.drawio) (open at [diagrams.net](https://app.diagrams.net/) or with a draw.io editor extension).
+The full narrative — why every write goes through `pyiceberg`, how reads resolve a Glue-held metadata pointer instead of a live `ATTACH`, and how the multi-engine interoperability claim was actually verified, not just asserted — is in [`docs/architecture.md`](docs/architecture.md). A draw.io diagram of the pipeline is at [`docs/architecture-diagram.drawio`](docs/architecture-diagram.drawio) (open at [diagrams.net](https://app.diagrams.net/) or with a draw.io editor extension).
 
 ```
 raw CSV (S3 landing)

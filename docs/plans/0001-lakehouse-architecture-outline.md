@@ -91,7 +91,7 @@ Delete the stub `main.py` once `src/iceduck/cli/main.py` + a `[project.scripts]`
 8. Athena + fresh-DuckDB interoperability verify. **Verify**: an Athena query against a gold fact table and a fresh DuckDB session reading the same table both return the same row count. ✅ Done — see [`docs/plans/0006-athena-duckdb-interop.md`](0006-athena-duckdb-interop.md).
 9. Makefile (`demo`, `reset`, `infra-up/apply/destroy`, `ingest`, `dbt`). **Verify**: `make demo` runs unattended end-to-end on fixture data. ✅ Done — see [`docs/plans/0007-makefile-pipeline.md`](0007-makefile-pipeline.md).
 10. Tests (`unit/` + `integration/` gated by `ICEDUCK_IT=1`). **Verify**: both pytest runs green. ✅ Done — see [`docs/plans/0008-tests.md`](0008-tests.md).
-11. Docs (README quickstart, CLAUDE.md, `docs/architecture.md`, `docs/plans/*`, `docs/TODO.md`). **Verify**: a fresh clone + README quickstart reproduces `make demo`.
+11. Docs (README quickstart, CLAUDE.md, `docs/architecture.md`, `docs/plans/*`, `docs/TODO.md`). **Verify**: a fresh clone + README quickstart reproduces `make demo`. ✅ Done — `docs/architecture.md` added; every file the pipeline needs confirmed tracked (`git ls-files`); a genuine `make reset && make demo` from a wiped Floci (no pre-existing state, no synced tofu state) reproduced every layer with the same row counts and all 13 models + 34 dbt tests passing (19/19 silver, 28/28 gold), in 68s total.
 
 ## Critical Files
 
