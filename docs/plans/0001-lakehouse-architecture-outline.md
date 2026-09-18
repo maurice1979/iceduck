@@ -85,11 +85,11 @@ Delete the stub `main.py` once `src/iceduck/cli/main.py` + a `[project.scripts]`
 2. OpenTofu apply (S3/IAM/3x Glue DB/Athena). **Verify**: `tofu apply` clean; `aws s3 ls`, `aws glue get-database` (x3), `aws athena get-work-group` all succeed.
 3. **Iceberg-on-Glue spike** — both the `pyiceberg` GlueCatalog path (used unconditionally by bronze ingestion) and the native `dbt-duckdb[glue]` path (candidate for silver/gold), de-risking before building the rest. **Verify**: documented verdict in `docs/plans/applied/`; `ICEBERG_WRITE_MODE` decided.
 4. Raw landing: fixtures + `s3-upload-raw`. **Verify**: `aws s3 ls s3://<bucket>/raw/patients/`. ✅ Done — see `docs/adr/0009-switch-dataset-to-synthea-ehr.md`.
-5. Bronze ingestion via `pyiceberg` (`ingest-all`). **Verify**: `aws glue get-tables --database-name iceduck_bronze` lists all entities; row counts match source CSVs.
-6. dbt staging + intermediate → silver (Iceberg via chosen write mode). **Verify**: `dbt test` green; `aws glue get-tables --database-name iceduck_silver` populated; silver counts reconcile against bronze.
-7. dbt marts → gold (Iceberg). **Verify**: `aws glue get-tables --database-name iceduck_gold` shows all dims/facts with correct schemas.
-8. Athena + fresh-DuckDB interoperability verify. **Verify**: an Athena query against a gold fact table and a fresh DuckDB session reading the same table both return the same row count.
-9. Makefile (`demo`, `reset`, `infra-up/apply/destroy`, `ingest`, `dbt`). **Verify**: `make demo` runs unattended end-to-end on fixture data.
+5. Bronze ingestion via `pyiceberg` (`ingest-all`). **Verify**: `aws glue get-tables --database-name iceduck_bronze` lists all entities; row counts match source CSVs. ✅ Done.
+6. dbt staging + intermediate → silver (Iceberg via chosen write mode). **Verify**: `dbt test` green; `aws glue get-tables --database-name iceduck_silver` populated; silver counts reconcile against bronze. ✅ Done — no intermediate layer needed (staging is already 1:1 with bronze); see [`docs/plans/0004-dbt-silver-layer.md`](0004-dbt-silver-layer.md) and [ADR-0010](../adr/0010-dbt-silver-write-and-read-mechanism.md).
+7. dbt marts → gold (Iceberg). **Verify**: `aws glue get-tables --database-name iceduck_gold` shows all dims/facts with correct schemas. ✅ Done — see [`docs/plans/0005-dbt-gold-layer.md`](0005-dbt-gold-layer.md).
+8. Athena + fresh-DuckDB interoperability verify. **Verify**: an Athena query against a gold fact table and a fresh DuckDB session reading the same table both return the same row count. ✅ Done — see [`docs/plans/0006-athena-duckdb-interop.md`](0006-athena-duckdb-interop.md).
+9. Makefile (`demo`, `reset`, `infra-up/apply/destroy`, `ingest`, `dbt`). **Verify**: `make demo` runs unattended end-to-end on fixture data. ✅ Done — see [`docs/plans/0007-makefile-pipeline.md`](0007-makefile-pipeline.md).
 10. Tests (`unit/` + `integration/` gated by `ICEDUCK_IT=1`). **Verify**: both pytest runs green.
 11. Docs (README quickstart, CLAUDE.md, `docs/architecture.md`, `docs/plans/*`, `docs/TODO.md`). **Verify**: a fresh clone + README quickstart reproduces `make demo`.
 
