@@ -1,5 +1,7 @@
 {{ config(materialized='external', location='target/silver/' ~ this.identifier ~ '.parquet', format='parquet') }}
 
+{% do source('bronze', 'organizations') %}  {# dependency registration only — real read is iceberg_source() below #}
+
 select
     "Id" as id,
     "NAME" as name,

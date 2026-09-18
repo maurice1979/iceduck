@@ -1,4 +1,4 @@
-.PHONY: floci-up floci-down infra-init infra-validate infra-plan infra-apply infra-destroy raw ingest dbt demo reset test test-integration
+.PHONY: floci-up floci-down infra-init infra-validate infra-plan infra-apply infra-destroy raw ingest dbt demo reset test test-integration dbt-docs
 
 floci-up:
 	docker compose -f docker/docker-compose.yml up -d --wait
@@ -59,3 +59,10 @@ test:
 # and drops real Iceberg tables, and rebuilds bronze/silver/gold.
 test-integration:
 	ICEDUCK_IT=1 uv run pytest tests/integration
+
+# Generates and serves dbt's model DAG + docs site. Needs no live Floci —
+# the manifest (DAG, descriptions, tests) is pure static compilation; the
+# iceberg_source() macro defaults to an empty location when vars aren't
+# supplied, specifically so this works standalone.
+dbt-docs:
+	cd dbt/iceduck && uv run dbt docs generate --profiles-dir . && uv run dbt docs serve --profiles-dir .

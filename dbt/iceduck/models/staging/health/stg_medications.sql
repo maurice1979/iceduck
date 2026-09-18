@@ -1,5 +1,7 @@
 {{ config(materialized='external', location='target/silver/' ~ this.identifier ~ '.parquet', format='parquet') }}
 
+{% do source('bronze', 'medications') %}  {# dependency registration only — real read is iceberg_source() below #}
+
 select
     "PATIENT" as patient_id,
     "PAYER" as payer_id,

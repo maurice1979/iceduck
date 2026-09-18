@@ -1,5 +1,7 @@
 {{ config(materialized='external', location='target/gold/' ~ this.identifier ~ '.parquet', format='parquet') }}
 
+{% do ref('stg_encounters') %}  {# dependency registration only — real read is iceberg_source() below #}
+
 select
     id as encounter_id,
     patient_id,

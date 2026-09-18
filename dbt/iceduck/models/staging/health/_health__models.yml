@@ -2,32 +2,62 @@ version: 2
 
 models:
   - name: stg_patients
+    description: >
+      One row per patient (natural key from Synthea, already a globally unique UUID).
+      Thin rename/cast off the iceduck_bronze.patients Iceberg table — no filtering
+      or business logic, 1:1 with bronze.
     columns:
       - name: id
+        description: Patient's natural key (UUID), reused as the primary key here and in dim_patient.
         tests: [not_null, unique]
   - name: stg_providers
+    description: >
+      One row per healthcare provider. Thin rename/cast off iceduck_bronze.providers,
+      1:1 with bronze.
     columns:
       - name: id
+        description: Provider's natural key (UUID), reused as the primary key here and in dim_provider.
         tests: [not_null, unique]
   - name: stg_organizations
+    description: >
+      One row per healthcare organization (hospital, clinic, etc.). Thin rename/cast
+      off iceduck_bronze.organizations, 1:1 with bronze.
     columns:
       - name: id
+        description: Organization's natural key (UUID), reused as the primary key here and in dim_organization.
         tests: [not_null, unique]
   - name: stg_encounters
+    description: >
+      One row per patient encounter (a visit/interaction with the healthcare system) —
+      the central entity in this dataset, feeding fct_encounters directly. Thin
+      rename/cast off iceduck_bronze.encounters, 1:1 with bronze.
     columns:
       - name: id
+        description: Encounter's natural key (UUID).
         tests: [not_null, unique]
       - name: patient_id
+        description: FK to stg_patients.id / dim_patient.patient_id.
         tests: [not_null]
   - name: stg_medications
+    description: >
+      One row per medication dispensed during an encounter (no single-column natural
+      key — patient_id + encounter_id + code is the effective composite key). Thin
+      rename/cast off iceduck_bronze.medications, 1:1 with bronze.
     columns:
       - name: patient_id
+        description: FK to stg_patients.id / dim_patient.patient_id.
         tests: [not_null]
       - name: encounter_id
+        description: FK to stg_encounters.id / fct_encounters.encounter_id.
         tests: [not_null]
   - name: stg_conditions
+    description: >
+      One row per diagnosed condition recorded during an encounter (no single-column
+      natural key). Thin rename/cast off iceduck_bronze.conditions, 1:1 with bronze.
     columns:
       - name: patient_id
+        description: FK to stg_patients.id / dim_patient.patient_id.
         tests: [not_null]
       - name: encounter_id
+        description: FK to stg_encounters.id / fct_encounters.encounter_id.
         tests: [not_null]

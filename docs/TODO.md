@@ -36,3 +36,22 @@ Today, `infra/tofu/iam.tf` grants direct Glue/S3/Athena IAM policy actions to a 
 - Since enforcement isn't emulated, this would be a modeling/IaC exercise rather than something with observable runtime effect against Floci — worth calling out explicitly if pursued, so it isn't mistaken for an access-control feature that's actually being tested.
 
 Record the decision (pursue or skip, and why) in a new `docs/plans/000X-*.md` if this is ever picked up, per the project's convention of documenting *why* non-trivial decisions were made.
+
+### A GUI for browsing tables (get users familiar with the data)
+
+DBeaver's Amazon Athena JDBC driver got real progress in one session: `AthenaEndpoint`/`S3Endpoint`/`WorkGroup` driver properties confirmed reaching Floci and actually running a query — but then hit a wall. `ResultFetcher=auto` (the default) needs a `.csv.metadata` S3 sidecar file that Floci's Athena emulation doesn't produce; the alternative, `ResultFetcher=GetQueryResultsStream`, avoids that but calls AWS's separate streaming API endpoint, which needed `AthenaStreamingEndpoint` pointed at Floci too — left untested whether Floci implements that streaming API at all. **Parked, not proven impossible.**
+
+What works today (`duckdb -ui`, documented in the README) requires manually resolving each table's `metadata_location` via `aws glue get-table` before every query — real, but no catalog tree, no click-to-browse.
+
+Three directions, either worth picking up:
+- **Cheap, reuses proven mechanism**: a small `iceduck` CLI command that resolves every bronze/silver/gold table's current metadata location and creates named views in a local persistent DuckDB file, then launches `duckdb -ui` against it. Turns the existing resolve-then-`iceberg_scan` pattern (ADR-0007) into a real catalog tree without any new tool.
+- **Finish the DBeaver path**: pick the `AthenaStreamingEndpoint` experiment back up and see whether Floci's streaming API works at all; if not, that's a genuine Floci gap worth documenting (in the spirit of ADR-0007/0008) rather than a DBeaver misconfiguration.
+- **[floci-dash](https://github.com/ofsazib/floci-dash)**: a Docker-based, AWS-console-style admin dashboard for Floci (React + Cloudscape frontend), with real Glue support (database/table browsing, schema drill-down) and Athena support — though its documented Athena feature set is "work groups, query executions (list/get/stop), data catalogs, databases, table metadata," which reads as execution-management rather than a SQL editor for submitting new ad hoc queries. Worth trying hands-on for browsing the Glue catalog structure (what tables/columns exist across `iceduck_bronze`/`_silver`/`_gold`) even if it doesn't end up replacing DuckDB for actually querying row data.
+
+### dbt docs site
+
+`dbt docs generate` + `dbt docs serve` renders a full model DAG (bronze → staging → marts) plus schema and test coverage, sourced from the project's existing `dbt/iceduck/models/staging/health/_health__models.yml` and `dbt/iceduck/models/marts/core/_core__models.yml` — both already exist with real test coverage, just no `description:` fields written yet. Structurally ready today; cheapest of these three items to pick up. Would need: model/column descriptions added to those two YAML files, then `dbt docs generate && dbt docs serve` (maybe worth a `make dbt-docs` target).
+
+### Analyst-facing dashboard
+
+The most involved of these three — needs a real tool choice (e.g. Streamlit+DuckDB, Metabase, Superset, and Evidence.dev are the realistic candidates for a local/portfolio setup) and its own read-path design, since whatever connects to the data hits the same Glue-resolve-then-`iceberg_scan` constraint (ADR-0007) as everything else in this project — not a given that every candidate tool supports that cleanly. Should get its own ADR/plan doc when actually picked up rather than being designed inline here.

@@ -2,27 +2,52 @@ version: 2
 
 models:
   - name: dim_patient
+    description: >
+      Patient dimension — one row per patient, passthrough of stg_patients with the
+      primary key renamed to patient_id for clean fact joins. Natural key (UUID),
+      no surrogate key.
     columns:
       - name: patient_id
+        description: Primary key, same UUID as stg_patients.id.
         tests: [not_null, unique]
   - name: dim_provider
+    description: >
+      Provider dimension — one row per healthcare provider, passthrough of
+      stg_providers with the primary key renamed to provider_id.
     columns:
       - name: provider_id
+        description: Primary key, same UUID as stg_providers.id.
         tests: [not_null, unique]
   - name: dim_organization
+    description: >
+      Organization dimension — one row per healthcare organization, passthrough of
+      stg_organizations with the primary key renamed to organization_id.
     columns:
       - name: organization_id
+        description: Primary key, same UUID as stg_organizations.id.
         tests: [not_null, unique]
   - name: dim_date
+    description: >
+      Generated calendar spine, not sourced from any staging table — one row per day
+      covering the full date range found across encounters/medications/conditions
+      (DuckDB generate_series over the min/max dates), with year/quarter/month/
+      day-of-week attributes.
     columns:
       - name: date_day
+        description: Primary key — a calendar date, joined from each fact's date FK column.
         tests: [not_null, unique]
 
   - name: fct_encounters
+    description: >
+      The central fact table — one row per patient encounter. FKs to dim_patient,
+      dim_provider, dim_organization, and dim_date (via encounter_date), plus cost/
+      coverage measures carried through from stg_encounters unchanged.
     columns:
       - name: encounter_id
+        description: Primary key, same UUID as stg_encounters.id.
         tests: [not_null, unique]
       - name: patient_id
+        description: FK to dim_patient.patient_id.
         tests:
           - not_null
           - relationships:
@@ -30,14 +55,20 @@ models:
                 to: ref('dim_patient')
                 field: patient_id
       - name: encounter_date
+        description: FK to dim_date.date_day — the encounter's start date.
         tests:
           - relationships:
               arguments:
                 to: ref('dim_date')
                 field: date_day
   - name: fct_medications
+    description: >
+      One row per medication dispensed during an encounter. FKs to dim_patient and
+      fct_encounters (no dim_encounter exists — encounters are themselves a fact),
+      plus cost/dispense measures from stg_medications unchanged.
     columns:
       - name: patient_id
+        description: FK to dim_patient.patient_id.
         tests:
           - not_null
           - relationships:
@@ -45,6 +76,7 @@ models:
                 to: ref('dim_patient')
                 field: patient_id
       - name: encounter_id
+        description: FK to fct_encounters.encounter_id — the encounter this medication was dispensed during.
         tests:
           - not_null
           - relationships:
@@ -52,8 +84,12 @@ models:
                 to: ref('fct_encounters')
                 field: encounter_id
   - name: fct_conditions
+    description: >
+      One row per condition diagnosed during an encounter. FKs to dim_patient and
+      fct_encounters, same pattern as fct_medications.
     columns:
       - name: patient_id
+        description: FK to dim_patient.patient_id.
         tests:
           - not_null
           - relationships:
@@ -61,6 +97,7 @@ models:
                 to: ref('dim_patient')
                 field: patient_id
       - name: encounter_id
+        description: FK to fct_encounters.encounter_id — the encounter this condition was diagnosed during.
         tests:
           - not_null
           - relationships:

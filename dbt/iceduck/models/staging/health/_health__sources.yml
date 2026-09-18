@@ -1,0 +1,17 @@
+version: 2
+
+sources:
+  - name: bronze
+    description: >
+      Raw Iceberg tables in iceduck_bronze, written by pyiceberg (iceduck ingest-all),
+      outside dbt. Declared here purely so dbt's dependency graph has an origin node
+      for the staging models — actual reads go through the iceberg_source() macro
+      (resolve-then-iceberg_scan, ADR-0007), not this source() declaration's own SQL.
+    schema: iceduck_bronze
+    tables:
+      - name: patients
+      - name: providers
+      - name: organizations
+      - name: encounters
+      - name: medications
+      - name: conditions

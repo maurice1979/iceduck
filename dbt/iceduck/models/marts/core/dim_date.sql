@@ -1,5 +1,9 @@
 {{ config(materialized='external', location='target/gold/' ~ this.identifier ~ '.parquet', format='parquet') }}
 
+{% do ref('stg_encounters') %}  {# dependency registration only — real reads are iceberg_source() below #}
+{% do ref('stg_medications') %}
+{% do ref('stg_conditions') %}
+
 with all_dates as (
     select cast(started_at as date) as d from {{ iceberg_source('silver', 'stg_encounters') }}
     union all

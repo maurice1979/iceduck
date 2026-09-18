@@ -160,6 +160,14 @@ make test-integration  # integration tests — needs `make demo` first (real Flo
 
 Integration tests are skipped by default (`ICEDUCK_IT` unset); `make test-integration` sets it. See [`docs/plans/0008-tests.md`](docs/plans/0008-tests.md).
 
+## dbt docs
+
+```sh
+make dbt-docs   # generates and serves the model DAG + schema/test docs site
+```
+
+Needs no live Floci — the DAG and all model/column descriptions come from pure static compilation, not a live warehouse query. Browse the full lineage: bronze sources → 6 staging models → 7 mart models. See [`docs/plans/0009-dbt-docs.md`](docs/plans/0009-dbt-docs.md).
+
 ## Learning notes
 
 This project intentionally documents *why* each non-trivial decision was made (see `docs/plans/`), including places where an initial idea (e.g. using DuckLake, or forcing Glue to be DuckLake's catalog) turned out to be wrong and was revised. That history is kept on purpose — it's as much a part of the portfolio as the working pipeline.
