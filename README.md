@@ -80,6 +80,15 @@ The infrastructure layer (S3 bucket, IAM role/policy, Glue databases, Athena wor
 
 Prerequisites: [Docker](https://www.docker.com/), [uv](https://docs.astral.sh/uv/), [OpenTofu](https://opentofu.org/) (`brew install opentofu`), AWS CLI (`brew install awscli`).
 
+**Quickest path** — the whole pipeline, unattended, on the small fixture dataset already committed to the repo (no Kaggle token needed):
+
+```sh
+cp .env.template .env   # adjust if needed; already gitignored
+make demo                # floci up -> infra apply -> raw -> bronze -> silver -> gold
+```
+
+`make reset` tears it back down (stops Floci **and drops its data**, clears local `tofu`/`dbt` state) so `make demo` can be re-run from a clean slate. The steps below walk through what `demo` does, one at a time.
+
 ```sh
 cp .env.template .env          # adjust if needed; already gitignored
 make floci-up                  # start Floci (the local AWS emulator)
