@@ -1,3 +1,5 @@
+"""Canonical env-var and Glue-database-name settings, shared across the CLI, dbt, and OpenTofu."""
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Glue database names are a fixed, cross-cutting convention shared with
@@ -10,6 +12,8 @@ GLUE_DATABASE_GOLD = "iceduck_gold"
 
 
 class Settings(BaseSettings):
+    """AWS credentials, Floci endpoint, and pipeline config, loaded from the environment or ``.env``."""
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     aws_access_key_id: str

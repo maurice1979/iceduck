@@ -22,6 +22,7 @@ N_FIXTURE_PATIENTS = 15
 
 
 def download_full() -> None:
+    """Download every entity CSV in `ENTITIES` from Kaggle into `FULL_DIR`."""
     FULL_DIR.mkdir(parents=True, exist_ok=True)
     api = kaggle.api
     api.authenticate()
@@ -31,11 +32,34 @@ def download_full() -> None:
 
 
 def read_csv(path: Path) -> list[dict]:
+    """Read a CSV file into a list of row dicts.
+
+    Parameters
+    ----------
+    path : Path
+        The CSV file to read.
+
+    Returns
+    -------
+    list[dict]
+        One dict per row, keyed by column header.
+    """
     with path.open(newline="", encoding="utf-8") as f:
         return list(csv.DictReader(f))
 
 
 def write_csv(path: Path, rows: list[dict], fieldnames: list[str]) -> None:
+    """Write a list of row dicts to a CSV file.
+
+    Parameters
+    ----------
+    path : Path
+        The CSV file to write.
+    rows : list[dict]
+        The rows to write.
+    fieldnames : list[str]
+        Column order for the header row.
+    """
     with path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
@@ -43,6 +67,7 @@ def write_csv(path: Path, rows: list[dict], fieldnames: list[str]) -> None:
 
 
 def generate_fixtures() -> None:
+    """Build the small, committed `FIXTURES_DIR` subset from `FULL_DIR`, keeping only `N_FIXTURE_PATIENTS` patients."""
     FIXTURES_DIR.mkdir(parents=True, exist_ok=True)
 
     patients = read_csv(FULL_DIR / "patients.csv")
@@ -80,6 +105,7 @@ def generate_fixtures() -> None:
 
 
 def main() -> None:
+    """Download the full dataset from Kaggle, then generate the committed fixtures subset."""
     download_full()
     generate_fixtures()
 

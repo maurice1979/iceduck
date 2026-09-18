@@ -1,4 +1,4 @@
-.PHONY: floci-up floci-down infra-init infra-validate infra-plan infra-apply infra-destroy raw ingest dbt demo reset test test-integration dbt-docs dashboard
+.PHONY: floci-up floci-down infra-init infra-validate infra-plan infra-apply infra-destroy raw ingest dbt demo reset test test-integration dbt-docs dashboard lint format typecheck
 
 floci-up:
 	docker compose -f docker/docker-compose.yml up -d --wait
@@ -71,3 +71,12 @@ dbt-docs:
 # (resolve-then-iceberg_scan, ADR-0007), not Athena. See ADR-0011.
 dashboard:
 	uv run --extra dashboard streamlit run dashboard/app.py
+
+lint:
+	uv run ruff check .
+
+format:
+	uv run ruff format .
+
+typecheck:
+	uv run mypy src/iceduck dashboard scripts sample_data

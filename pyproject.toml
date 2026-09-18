@@ -35,8 +35,36 @@ packages = ["src/iceduck"]
 
 [dependency-groups]
 dev = [
+    "boto3-stubs[glue,s3]>=1.43.97",
+    "mypy>=2.3.1",
+    "pandas-stubs>=3.0.5.260914",
     "pytest>=9.1.1",
+    "ruff>=0.16.8",
+    "types-pyyaml>=6.0.12.20260906",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "D", "ANN"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D", "ANN"]
+"conftest.py" = ["D", "ANN"]
+"src/iceduck/*/__init__.py" = ["D"]
+
+[tool.mypy]
+python_version = "3.13"
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["kaggle.*", "plotly.*", "pyarrow.*"]
+ignore_missing_imports = true

@@ -62,4 +62,6 @@ def test_every_product_column_is_typed_exactly_once():
             + product.double_columns
             + product.long_columns
         )
-        assert len(all_columns) == len(set(all_columns)), f"{product.name} has a column listed in more than one type bucket"
+        assert len(all_columns) == len(set(all_columns)), (
+            f"{product.name} has a column listed in more than one type bucket"
+        )

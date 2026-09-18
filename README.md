@@ -178,6 +178,16 @@ make test-integration  # integration tests — needs `make demo` first (real Flo
 
 Integration tests are skipped by default (`ICEDUCK_IT` unset); `make test-integration` sets it. See [`docs/plans/0008-tests.md`](docs/plans/0008-tests.md).
 
+## Code quality
+
+```sh
+make lint        # ruff check — style, imports, NumPy-convention docstrings, type-hint coverage
+make format       # ruff format — 120-char line length
+make typecheck    # mypy
+```
+
+See [ADR-0012](docs/adr/0012-code-style-and-typing-standards.md) for the standards (120-char lines, NumPy docstrings, full type hints on core source, `tests/` exempted from docstring/annotation rules).
+
 ## dbt docs
 
 ```sh
