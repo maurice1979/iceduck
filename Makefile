@@ -1,4 +1,4 @@
-.PHONY: floci-up floci-down infra-init infra-validate infra-plan infra-apply infra-destroy raw ingest dbt demo reset test test-integration dbt-docs
+.PHONY: floci-up floci-down infra-init infra-validate infra-plan infra-apply infra-destroy raw ingest dbt demo reset test test-integration dbt-docs dashboard
 
 floci-up:
 	docker compose -f docker/docker-compose.yml up -d --wait
@@ -66,3 +66,8 @@ test-integration:
 # supplied, specifically so this works standalone.
 dbt-docs:
 	cd dbt/iceduck && uv run dbt docs generate --profiles-dir . && uv run dbt docs serve --profiles-dir .
+
+# Analyst-facing dashboard over the gold layer — reads via DuckDB directly
+# (resolve-then-iceberg_scan, ADR-0007), not Athena. See ADR-0011.
+dashboard:
+	uv run --extra dashboard streamlit run dashboard/app.py

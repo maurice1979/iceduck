@@ -186,6 +186,14 @@ make dbt-docs   # generates and serves the model DAG + schema/test docs site
 
 Needs no live Floci — the DAG and all model/column descriptions come from pure static compilation, not a live warehouse query. Browse the full lineage: bronze sources → 6 staging models → 7 mart models. See [`docs/plans/0009-dbt-docs.md`](docs/plans/0009-dbt-docs.md).
 
+## Dashboard
+
+```sh
+make dashboard   # analyst-facing dashboard over the gold layer
+```
+
+Streamlit + Plotly, reading `iceduck_gold` directly via DuckDB (the same resolve-then-`iceberg_scan` mechanism as everywhere else in this project — no Athena). KPIs, encounters over time/by class, cost by organization, top conditions/medications, and a raw-table browser. See [ADR-0011](docs/adr/0011-streamlit-dashboard-duckdb-not-athena.md) for why Streamlit was chosen over Apache Superset, and [`docs/plans/0010-streamlit-dashboard.md`](docs/plans/0010-streamlit-dashboard.md) for the build record.
+
 ## Learning notes
 
 This project intentionally documents *why* each non-trivial decision was made (see `docs/plans/`), including places where an initial idea (e.g. using DuckLake, or forcing Glue to be DuckLake's catalog) turned out to be wrong and was revised. That history is kept on purpose — it's as much a part of the portfolio as the working pipeline.

@@ -20,6 +20,12 @@ dependencies = [
 [project.scripts]
 iceduck = "iceduck.cli.main:cli"
 
+[project.optional-dependencies]
+dashboard = [
+    "plotly>=7.1.0",
+    "streamlit>=1.64.0",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
