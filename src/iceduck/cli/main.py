@@ -91,13 +91,12 @@ def build_silver() -> None:
     env["AWS_DEFAULT_REGION"] = settings.aws_default_region
     env["AWS_ENDPOINT_URL"] = settings.aws_endpoint_url
 
-    # DuckDB's COPY (used by dbt-duckdb's external materialization) doesn't
-    # create parent directories for its output path.
+    # DuckDB's COPY (used by dbt-duckdb's external materialization) doesn't create parent directories for its output
+    # path.
     (DBT_DIR / "target" / "silver").mkdir(parents=True, exist_ok=True)
 
-    # `dbt build` (not `run`) so model builds and their schema tests run in
-    # the same DuckDB session — profiles.yml uses an in-memory database, so
-    # a separately-invoked `dbt test` process would see an empty catalog.
+    # `dbt build` (not `run`) so model builds and their schema tests run in the same DuckDB session — profiles.yml uses
+    # an in-memory database, so a separately-invoked `dbt test` process would see an empty catalog.
     subprocess.run(
         [
             "dbt",
