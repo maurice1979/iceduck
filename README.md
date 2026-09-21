@@ -23,7 +23,7 @@ raw CSV (S3 landing)
    ▼
 bronze (Iceberg, Glue DB: iceduck_bronze)     ← written via pyiceberg
    │
-   ▼   dbt (dbt-duckdb, external Parquet) + a pyiceberg publish step
+   ▼   dbt Fusion (DuckDB, external Parquet) + a pyiceberg publish step
 silver (Iceberg, Glue DB: iceduck_silver)     ← staging models (1:1 with bronze, built)
    │
    ▼
@@ -47,7 +47,7 @@ All storage lives in one S3 bucket (emulated via Floci); AWS Glue is the **singl
 | Concern | Tool |
 |---|---|
 | Query engine / transform compute | [DuckDB](https://duckdb.org/) |
-| Transformation framework | [dbt](https://www.getdbt.com/) (`dbt-duckdb`) |
+| Transformation framework | [dbt](https://www.getdbt.com/) — the Fusion engine (`dbt` v2, a standalone binary, not the `dbt-core`/`dbt-duckdb` Python packages) |
 | Table format | [Apache Iceberg](https://iceberg.apache.org/) |
 | Catalog | AWS Glue Data Catalog |
 | Local AWS emulation | [Floci](https://github.com/floci-io/floci) |
@@ -78,7 +78,7 @@ tests/            Unit + integration tests
 
 The infrastructure layer (S3 bucket, IAM role/policy, Glue databases, Athena workgroup), raw data landing, and the full bronze → silver → gold pipeline are all runnable today — see the build order in `docs/plans/0001-lakehouse-architecture-outline.md`.
 
-Prerequisites: [Docker](https://www.docker.com/), [uv](https://docs.astral.sh/uv/), [OpenTofu](https://opentofu.org/) (`brew install opentofu`), AWS CLI (`brew install awscli`).
+Prerequisites: [Docker](https://www.docker.com/), [uv](https://docs.astral.sh/uv/), [OpenTofu](https://opentofu.org/) (`brew install opentofu`), AWS CLI (`brew install awscli`), and the dbt Fusion engine (`brew install dbt`) — see [ADR-0013](docs/adr/0013-dbt-fusion-engine.md).
 
 **Quickest path** — the whole pipeline, unattended, on the small fixture dataset already committed to the repo (no Kaggle token needed):
 
