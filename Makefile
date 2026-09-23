@@ -1,4 +1,4 @@
-.PHONY: floci-up floci-down infra-init infra-validate infra-plan infra-apply infra-destroy raw ingest dbt demo reset test test-integration dbt-docs dashboard lint format typecheck
+.PHONY: floci-up floci-down infra-init infra-validate infra-plan infra-apply infra-destroy raw ingest dbt demo demo-full reset test test-integration dbt-docs dashboard lint format typecheck
 
 floci-up:
 	docker compose -f docker/docker-compose.yml up -d --wait
@@ -21,8 +21,12 @@ infra-apply:
 infra-destroy:
 	tofu -chdir=infra/tofu destroy
 
+# Which local dataset `raw` uploads: fixtures (committed, default) or full
+# (the whole Kaggle dataset, gitignored — run sample_data/health/download.py first).
+DATASET ?= fixtures
+
 raw:
-	uv run iceduck s3-upload-raw
+	uv run iceduck s3-upload-raw --dataset $(DATASET)
 
 ingest:
 	uv run iceduck ingest-all
@@ -41,7 +45,12 @@ demo:
 	$(MAKE) raw
 	$(MAKE) ingest
 	$(MAKE) dbt
-	@echo "Demo complete: raw CSVs -> bronze -> silver -> gold, all real Iceberg tables in Glue (iceduck_bronze/iceduck_silver/iceduck_gold)."
+	@echo "Demo complete ($(DATASET) dataset): raw CSVs -> bronze -> silver -> gold, all real Iceberg tables in Glue (iceduck_bronze/iceduck_silver/iceduck_gold)."
+
+# Same as demo, on the full Kaggle dataset (~1.2k patients, ~29 MB of CSV)
+# instead of the 15-patient fixtures. Needs sample_data/health/full/ populated.
+demo-full:
+	$(MAKE) demo DATASET=full
 
 # Stops Floci and wipes its persistent volume (FLOCI_STORAGE_MODE=persistent
 # survives a plain floci-down), plus local tofu/dbt state, so `make demo` can
