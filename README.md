@@ -116,10 +116,24 @@ Land the sample EHR data:
 
 ```sh
 uv run python sample_data/health/download.py   # requires a Kaggle API token at ~/.kaggle/access_token
-uv run iceduck s3-upload-raw
+uv run iceduck s3-upload-raw                   # the committed 15-patient fixtures (default)
+uv run iceduck s3-upload-raw --dataset full    # or the whole downloaded dataset
 
 aws s3 ls s3://iceduck-lakehouse/raw/patients/   # (and providers, organizations, medications, encounters, conditions)
 ```
+
+`download.py` writes the full dataset to `sample_data/health/full/` (gitignored) and regenerates the committed `fixtures/` subset from it:
+
+| entity | fixtures | full |
+|---|---:|---:|
+| patients | 15 | 1,171 |
+| encounters | 358 | 53,346 |
+| medications | 124 | 42,989 |
+| conditions | 73 | 8,376 |
+| providers | 32 | 5,855 |
+| organizations | 32 | 1,119 |
+
+The full dataset is ~29 MB of CSV. Both land at the same `raw/<entity>/<entity>.csv` keys and every layer is drop-and-recreate, so switching is just a re-upload plus a rebuild. `make demo-full` (or `make demo DATASET=full`, or `make raw DATASET=full` on an already-running stack) runs the whole pipeline on it. `make test-integration` compares bronze against the fixture CSVs, so run `make raw ingest` (fixtures) before it if you loaded the full dataset.
 
 See [ADR-0009](docs/adr/0009-switch-dataset-to-synthea-ehr.md) for why this dataset was chosen over the originally-planned Olist e-commerce data.
 

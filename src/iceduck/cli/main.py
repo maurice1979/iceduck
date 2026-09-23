@@ -18,7 +18,10 @@ from iceduck.core.settings import (
 )
 from iceduck.products.health import ingest_product, load_product, load_products
 
-FIXTURES_DIR = Path(__file__).parent.parent.parent.parent / "sample_data" / "health" / "fixtures"
+SAMPLE_DATA_DIR = Path(__file__).parent.parent.parent.parent / "sample_data" / "health"
+FIXTURES_DIR = SAMPLE_DATA_DIR / "fixtures"
+FULL_DIR = SAMPLE_DATA_DIR / "full"
+DATASET_DIRS = {"fixtures": FIXTURES_DIR, "full": FULL_DIR}
 DBT_DIR = Path(__file__).parent.parent.parent.parent / "dbt" / "iceduck"
 
 
@@ -41,13 +44,30 @@ def env() -> None:
 
 
 @cli.command("s3-upload-raw")
-def s3_upload_raw() -> None:
-    """Upload sample_data/health/fixtures/*.csv to s3://<bucket>/raw/<entity>/."""
+@click.option(
+    "--dataset",
+    type=click.Choice(list(DATASET_DIRS)),
+    default="fixtures",
+    show_default=True,
+    help="fixtures: the small committed subset. full: the whole Kaggle dataset (gitignored, needs download.py).",
+)
+def s3_upload_raw(dataset: str) -> None:
+    """Upload sample_data/health/<dataset>/*.csv to s3://<bucket>/raw/<entity>/.
+
+    Both datasets land at the same keys, so uploading one replaces the other and the
+    downstream stages (``ingest-all``, ``build-silver``, ``build-gold``) need no changes.
+
+    Parameters
+    ----------
+    dataset : str
+        Which local dataset to upload: ``fixtures`` or ``full``.
+    """
+    dataset_dir = DATASET_DIRS[dataset]
     client = get_s3_client()
-    csv_files = sorted(FIXTURES_DIR.glob("*.csv"))
+    csv_files = sorted(dataset_dir.glob("*.csv"))
     if not csv_files:
         raise click.ClickException(
-            f"No fixture CSVs found in {FIXTURES_DIR}. Run: uv run python sample_data/health/download.py"
+            f"No {dataset} CSVs found in {dataset_dir}. Run: uv run python sample_data/health/download.py"
         )
     for csv_file in csv_files:
         entity = csv_file.stem

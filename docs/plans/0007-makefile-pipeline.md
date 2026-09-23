@@ -29,6 +29,12 @@ All 6 bronze entities, 6 silver staging tables, and all 7 gold mart tables (28/2
 
 `make reset` was **not** executed as part of this verification — Floci is a single long-running Docker container shared across this machine's git worktrees, not something scoped per-worktree, so `docker compose down -v` would have destroyed the live bronze/silver/gold data built and verified in earlier phases (including data actively being queried via `duckdb -ui` in the same session). Its recipe was reviewed and dry-run (`make -n reset`) instead, confirming the command sequence is correct; a true from-scratch `make reset && make demo` run is a reasonable thing to do once, deliberately, outside an active work session.
 
+## Follow-up: full-dataset runs (2026-09-23)
+
+`s3-upload-raw` previously hardcoded `sample_data/health/fixtures/`, so the full Kaggle dataset `download.py` already fetched into the gitignored `full/` had no supported way in. Added `iceduck s3-upload-raw --dataset {fixtures,full}` (default `fixtures`), a `DATASET ?= fixtures` Makefile variable threaded into `raw`, and a `demo-full` target (`make demo DATASET=full`). Both datasets land at the same `raw/<entity>/<entity>.csv` keys and every layer is drop-and-recreate, so nothing downstream changed. `make demo` stays fixtures-only and token-free.
+
+Verified on the running Floci via `make raw ingest DATASET=full && make dbt`: bronze patients 1171, providers 5855, organizations 1119, medications 42989, encounters 53346, conditions 8376 (matching the CSVs); gold `dim_date` 39364; `dbt build` 28/28 passing. Note that `tests/integration/test_ingest_and_lookup.py` compares bronze to the fixture CSVs, so reload fixtures before `make test-integration`.
+
 ## Not in scope for this phase
 
 Build Order step 10 (unit/integration tests, `ICEDUCK_IT=1`-gated) and the remainder of step 11 (`docs/architecture.md`).
