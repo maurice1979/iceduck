@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: int_encounters__enriched
+    description: >
+      One row per encounter, enriched with the patient's age at the encounter, the
+      encounter's duration, and its out-of-pocket cost. Ephemeral — inlined as a CTE
+      into the marts that ref() it, never published as its own table.
+    columns:
+      - name: encounter_id
+        description: Primary key, same UUID as stg_encounters.id.
+      - name: patient_age_at_encounter
+        description: Completed years of age on the encounter date (age(), not a year-boundary datediff).
+      - name: encounter_duration_hours
+        description: stopped_at - started_at, in fractional hours.
+      - name: out_of_pocket_cost
+        description: total_claim_cost - payer_coverage — what the patient paid.

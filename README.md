@@ -67,11 +67,11 @@ docker/          Docker Compose (Floci, the local AWS emulator)
 infra/tofu/      OpenTofu IaC: S3 bucket, IAM, Glue databases, Athena workgroup
 scripts/         Standalone spike/verification scripts (not part of the pipeline)
 src/iceduck/     Python CLI + core logic (ingestion, Iceberg/Glue helpers, settings)
-products/         Per-entity ingestion config (patients, providers, organizations, ...)
-dbt/iceduck/      dbt project: staging → intermediate → marts
-sample_data/      Dataset download + small committed fixtures for fast local runs
-docs/             Architecture notes, ADRs, and phased design/build plans
-tests/            Unit + integration tests
+products/        Per-entity ingestion config (patients, providers, organizations, ...)
+dbt/iceduck/     dbt project: staging → intermediate → marts
+sample_data/     Dataset download + small committed fixtures for fast local runs
+docs/            Architecture notes, ADRs, and phased design/build plans
+tests/           Unit + integration tests
 ```
 
 ## Getting started
@@ -149,7 +149,7 @@ aws glue get-tables --database-name iceduck_silver --query 'TableList[].Name'
 aws glue get-tables --database-name iceduck_gold --query 'TableList[].Name'
 ```
 
-See [`docs/plans/0004-dbt-silver-layer.md`](docs/plans/0004-dbt-silver-layer.md) and [ADR-0010](docs/adr/0010-dbt-silver-write-and-read-mechanism.md) for how the silver (and, by the same mechanism, gold) read/write path works (DuckDB can't live-attach to Glue against Floci — see ADR-0007 — so dbt resolves each source table's metadata location via Glue and reads it with `iceberg_scan`; writes go out as external Parquet, then a `pyiceberg` publish step promotes that into a real Iceberg table, mirroring bronze). Gold's star schema (`dim_patient`, `dim_provider`, `dim_organization`, `dim_date` + `fct_encounters`, `fct_medications`, `fct_conditions`) is documented in [`docs/plans/0005-dbt-gold-layer.md`](docs/plans/0005-dbt-gold-layer.md).
+See [`docs/plans/0004-dbt-silver-layer.md`](docs/plans/0004-dbt-silver-layer.md) and [ADR-0010](docs/adr/0010-dbt-silver-write-and-read-mechanism.md) for how the silver (and, by the same mechanism, gold) read/write path works (DuckDB can't live-attach to Glue against Floci — see ADR-0007 — so dbt resolves each source table's metadata location via Glue and reads it with `iceberg_scan`; writes go out as external Parquet, then a `pyiceberg` publish step promotes that into a real Iceberg table, mirroring bronze). Gold's star schema (`dim_patient`, `dim_provider`, `dim_organization`, `dim_date` + `fct_encounters`, `fct_medications`, `fct_conditions`) is documented in [`docs/plans/0005-dbt-gold-layer.md`](docs/plans/0005-dbt-gold-layer.md). On top of it, `marts/clinical/` holds KPI marts: `fct_readmissions` (30-day inpatient readmissions, one row per inpatient stay). These are built from the ephemeral intermediate model `int_encounters__enriched` (patient age at encounter, duration, out-of-pocket cost), which is inlined into the marts and never published as its own table.
 
 Inspect any table directly with DuckDB (no catalog `ATTACH` — see ADR-0007 for why):
 
@@ -216,7 +216,7 @@ Needs no live Floci — the DAG and all model/column descriptions come from pure
 make dashboard   # analyst-facing dashboard over the gold layer
 ```
 
-Streamlit + Plotly, reading `iceduck_gold` directly via DuckDB (the same resolve-then-`iceberg_scan` mechanism as everywhere else in this project — no Athena). KPIs, encounters over time/by class, cost by organization, top conditions/medications, and a raw-table browser. See [ADR-0011](docs/adr/0011-streamlit-dashboard-duckdb-not-athena.md) for why Streamlit was chosen over Apache Superset, and [`docs/plans/0010-streamlit-dashboard.md`](docs/plans/0010-streamlit-dashboard.md) for the build record.
+Streamlit + Plotly, reading `iceduck_gold` directly via DuckDB (the same resolve-then-`iceberg_scan` mechanism as everywhere else in this project — no Athena). KPIs, encounters over time/by class, cost by organization, top conditions/medications, a 30-day readmissions section (rate KPI, rate by admission type, days-to-readmission distribution, rate by discharge year) over `fct_readmissions`, and a raw-table browser. See [ADR-0011](docs/adr/0011-streamlit-dashboard-duckdb-not-athena.md) for why Streamlit was chosen over Apache Superset, and [`docs/plans/0010-streamlit-dashboard.md`](docs/plans/0010-streamlit-dashboard.md) for the build record.
 
 ## Learning notes
 

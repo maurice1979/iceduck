@@ -148,6 +148,7 @@ GOLD_MART_MODELS = [
     "fct_encounters",
     "fct_medications",
     "fct_conditions",
+    "fct_readmissions",
 ]
 SILVER_TABLES_FOR_MARTS = [
     "stg_patients",
@@ -177,7 +178,7 @@ def build_gold() -> None:
             "dbt",
             "build",
             "--select",
-            "marts.core",
+            "marts",
             "--profiles-dir",
             ".",
             "--vars",
