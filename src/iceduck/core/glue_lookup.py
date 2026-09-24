@@ -52,3 +52,30 @@ def resolve_metadata_locations(database: str, table_names: list[str]) -> dict[st
         response = client.get_table(DatabaseName=database, Name=name)
         locations[name] = response["Table"]["Parameters"]["metadata_location"]
     return locations
+
+
+def list_metadata_locations(database: str) -> dict[str, str]:
+    """List every Iceberg table in a Glue database with its current ``metadata_location``.
+
+    Unlike `resolve_metadata_locations`, this discovers the tables itself (``GetTables``,
+    paginated) instead of taking a list, so newly published tables show up without code
+    changes. Tables without a ``metadata_location`` parameter (non-Iceberg) are skipped.
+
+    Parameters
+    ----------
+    database : str
+        The Glue database to list (e.g. ``iceduck_gold``).
+
+    Returns
+    -------
+    dict[str, str]
+        Mapping of table name to its current ``metadata_location`` S3 URI.
+    """
+    paginator = get_glue_client().get_paginator("get_tables")
+    locations = {}
+    for page in paginator.paginate(DatabaseName=database):
+        for table in page["TableList"]:
+            location = table.get("Parameters", {}).get("metadata_location")
+            if location:
+                locations[table["Name"]] = location
+    return locations
