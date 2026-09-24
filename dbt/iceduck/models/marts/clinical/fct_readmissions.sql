@@ -15,7 +15,7 @@
 
 with inpatient as (
     select encounter_id, patient_id, started_at, stopped_at
-    from {{ ref('int_encounters__enriched') }}
+    from {{ ref('int_encounters_enriched') }}
     where encounter_class = 'inpatient'
 ),
 

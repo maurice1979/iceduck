@@ -1,0 +1,27 @@
+unit_tests:
+  - name: fct_readmissions__readmission_within_30_days_is_flagged
+    description: A second inpatient stay 10 days after discharge counts as a 30-day readmission.
+    model: fct_readmissions
+    given:              
+      - input: ref('int_encounters_enriched')
+        format: sql
+        rows: |
+          select
+            'e1'                            as encounter_id,
+            'p1'                            as patient_id,
+            'inpatient'                     as encounter_class,
+            timestamp '2020-01-01 08:00:00' as started_at,
+            timestamp '2020-01-05 12:00:00' as stopped_at
+
+          union all
+
+          select
+            'e2',
+            'p1',
+            'inpatient',
+            timestamp '2020-01-15 12:00:00',
+            timestamp '2020-01-18 10:00:00'
+    expect:
+      rows:
+        - {encounter_id: e1, next_admission_encounter_id: e2, is_readmitted_30d: true}
+        - {encounter_id: e2, next_admission_encounter_id: null, is_readmitted_30d: false}

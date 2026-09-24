@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: int_encounters__enriched
+  - name: int_encounters_enriched
     description: >
       One row per encounter, enriched with the patient's age at the encounter, the
       encounter's duration, and its out-of-pocket cost. Ephemeral — inlined as a CTE
