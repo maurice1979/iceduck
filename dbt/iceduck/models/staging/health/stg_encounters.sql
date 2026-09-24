@@ -11,7 +11,7 @@ select
     "ENCOUNTERCLASS" as encounter_class,
     "CODE" as code,
     "DESCRIPTION" as description,
-    "REASONCODE" as reason_code,
+    nullif("REASONCODE", '') as reason_code,
     "REASONDESCRIPTION" as reason_description,
     "START" as started_at,
     "STOP" as stopped_at,

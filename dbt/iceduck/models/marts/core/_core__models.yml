@@ -54,6 +54,27 @@ models:
               arguments:
                 to: ref('dim_patient')
                 field: patient_id
+      - name: organization_id
+        description: FK to dim_organization.organization_id — the organization where the encounter took place.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_organization')
+                field: organization_id
+      - name: provider_id
+        description: FK to dim_provider.provider_id — the provider who attended the encounter.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_provider')
+                field: provider_id
+      - name: payer_id
+        description: >
+          UUID of the payer (insurer) billed for the encounter. Not an FK yet — Synthea's
+          payers table isn't ingested, so there is no dim_payer.
+        tests: [not_null]
       - name: encounter_date
         description: FK to dim_date.date_day — the encounter's start date.
         tests:
@@ -61,6 +82,42 @@ models:
               arguments:
                 to: ref('dim_date')
                 field: date_day
+      - name: encounter_class
+        description: >
+          Setting of care. Drives the clinical marts — e.g. fct_readmissions keeps only
+          'inpatient' stays.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['wellness', 'ambulatory', 'outpatient', 'urgentcare', 'emergency', 'inpatient']
+      - name: code
+        description: SNOMED-CT code of the encounter type.
+        tests: [not_null]
+      - name: description
+        description: Human-readable label of the SNOMED-CT encounter code.
+      - name: reason_code
+        description: >
+          SNOMED-CT code of the condition that motivated the encounter. Empty string
+          (not NULL) when the encounter had no recorded reason — carried through
+          unchanged from bronze.
+      - name: reason_description
+        description: Human-readable label of reason_code; empty string when there is no reason.
+      - name: started_at
+        description: Encounter start timestamp (timestamptz). encounter_date is its date part.
+        tests: [not_null]
+      - name: stopped_at
+        description: Encounter end timestamp (timestamptz).
+        tests: [not_null]
+      - name: base_encounter_cost
+        description: Base cost of the encounter itself, before procedures/medications/etc. are added to the claim.
+        tests: [not_null, not_negative]
+      - name: total_claim_cost
+        description: Total cost billed on the encounter's claim.
+        tests: [not_null, not_negative]
+      - name: payer_coverage
+        description: Portion of total_claim_cost paid by the payer; the patient pays the rest.
+        tests: [not_null, not_negative]
   - name: fct_medications
     description: >
       One row per medication dispensed during an encounter. FKs to dim_patient and
