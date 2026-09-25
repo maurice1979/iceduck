@@ -1,0 +1,23 @@
+version: 2
+
+exposures:
+  - name: iceduck_dashboard
+    label: IceDuck Streamlit dashboard
+    type: dashboard
+    maturity: low
+    url: http://localhost:8501
+    description: >
+      Streamlit dashboard (ADR-0011) with KPI cards, charts and a raw table browser over
+      the gold layer, plus a SQL console tab. Reads the published Iceberg tables in
+      iceduck_gold via DuckDB, not the dbt Parquet output directly.
+    depends_on:
+      - ref('dim_patient')
+      - ref('dim_provider')
+      - ref('dim_organization')
+      - ref('dim_date')
+      - ref('fct_encounters')
+      - ref('fct_medications')
+      - ref('fct_conditions')
+      - ref('fct_readmissions')
+    owner:
+      name: Jordi
