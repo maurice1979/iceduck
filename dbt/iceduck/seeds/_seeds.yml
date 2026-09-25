@@ -1,0 +1,56 @@
+version: 2
+
+seeds:
+  - name: condition_categories
+    description: >
+      Hand-curated mapping of every SNOMED-CT condition code found in the Synthea data
+      to a clinical category and a chronic/acute flag. Owned reference data, not source
+      data. fct_conditions.code has a relationships test against this seed, so a new
+      data batch with an unmapped code fails the build instead of silently dropping out
+      of category-based marts.
+    config:
+      column_types:
+        code: varchar
+        description: varchar
+        category: varchar
+        is_chronic: boolean
+    columns:
+      - name: code
+        description: >
+          SNOMED-CT condition code. Forced to varchar: it's an identifier, not a number,
+          and inferring it as an integer would break the join to fct_conditions.code.
+        tests: [not_null, unique]
+      - name: description
+        description: >
+          Human-readable label, kept only so the CSV can be reviewed by eye. Downstream
+          models should take the description from fct_conditions and join on code only.
+      - name: category
+        description: Clinical category (body system / condition group) the code belongs to.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - allergic
+                  - cardiovascular
+                  - gastrointestinal
+                  - infectious
+                  - injury
+                  - mental_behavioral
+                  - metabolic_endocrine
+                  - musculoskeletal
+                  - neurological
+                  - oncology
+                  - other
+                  - pregnancy_reproductive
+                  - renal_urinary
+                  - respiratory
+      - name: is_chronic
+        description: >
+          True for conditions that persist and need ongoing management (hypertension,
+          diabetes, cancer); false for episodes that resolve (infections, injuries,
+          pregnancy events) and for "History of ..." status codes, which record a past
+          event rather than an active disease. Assigned by clinical judgement, not from
+          the data: Synthea leaves many acute conditions open (e.g. appendicitis,
+          cardiac arrest), so a missing stopped_on is not a reliable chronic signal.
+        tests: [not_null]

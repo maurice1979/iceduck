@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: fct_readmissions
+    description: >
+      30-day inpatient readmissions — one row per inpatient stay (the index stay),
+      with the next inpatient admission for the same patient that starts at or after
+      its discharge. Readmission rate = avg(is_readmitted_30d) over rows where
+      has_full_followup. Includes planned readmissions (Synthea has no planned flag).
+    columns:
+      - name: encounter_id
+        description: Primary key — the index stay, FK to fct_encounters.encounter_id.
+        tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('fct_encounters')
+                field: encounter_id
+      - name: patient_id
+        description: FK to dim_patient.patient_id.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_patient')
+                field: patient_id
+      - name: discharge_date
+        description: FK to dim_date.date_day — the index stay's discharge date.
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_day
+      - name: next_admission_encounter_id
+        description: The next inpatient stay starting at or after discharge; null if none.
+      - name: days_to_next_admission
+        description: Fractional days from discharge to the next admission; null if none.
+      - name: is_readmitted_30d
+        description: True when the next admission starts within 30 days of discharge.
+        tests: [not_null]
+      - name: has_full_followup
+        description: False for stays discharged in the last 30 days of data (incomplete window).
+        tests: [not_null]

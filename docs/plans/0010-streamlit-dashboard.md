@@ -39,6 +39,15 @@ ALL CHECKS PASSED
 
 All row counts match every prior verification this session (bronze/silver/gold reconciliation, Athena/DuckDB interop). Visual confirmation of the actual rendered charts (client-side React, can't be checked via curl) is left to the user opening `make dashboard` in a browser.
 
+## Follow-up: SQL console tab (2026-09-24)
+
+Prototyping a dbt model meant `duckdb -ui` plus a manual `aws glue get-table … metadata_location` lookup per table. The dashboard is now two tabs (`st.tabs`): the existing dashboard (body moved into `render_dashboard()`, unchanged) and a **SQL console** (`dashboard/sql_console.py`).
+
+- `src/iceduck/core/duckdb_session.py` (new, shared so a future `make sql` DuckDB-UI target can reuse it): `connect_floci()` (the S3-secret setup previously inline in `app.py`), and `register_lake_views(con)`, which creates `bronze.*`/`silver.*`/`gold.*` views over `iceberg_scan(<metadata_location>)`. Tables come from `glue_lookup.list_metadata_locations()` (paginated `GetTables`, non-Iceberg tables skipped), not a hardcoded list, so new marts appear without code changes.
+- The console has its **own** cached DuckDB connection, so a stray `DROP`/`SET` can't affect the dashboard; views are pinned to the snapshot current at creation, and the sidebar "Refresh data" re-pins them. Results are capped at 10,000 rows (`limit` pushed into the query, not fetched then cut); `duckdb.Error` renders inline via `st.error`. It is deliberately not a sandbox — any SQL runs, including writes via the S3 secret — acceptable for a local dev tool.
+
+Verified headlessly (`streamlit.testing.v1.AppTest`) against the live full-dataset lake: 20 views registered (6 bronze, 6 silver, 8 gold); `select * from gold.fct_readmissions` → 1,838 rows; a silver count, a gold join, an unknown table (inline error, no exception), a DDL statement ("OK"), and a 20,000-row query (truncated to 10,000) all behave as expected; the dashboard tab still renders all 7 KPIs. Unit tests cover the view DDL builder and the Glue pagination.
+
 ## Not in scope for this phase
 
 Filters (date range, encounter class, organization) on the dashboard itself — the current scope is KPIs + fixed charts + a raw browser, not an interactive filterable BI tool; a reasonable future addition if the dashboard proves useful enough to invest further.

@@ -1,0 +1,130 @@
+code,description,category,is_chronic
+241929008,Acute allergic reaction,allergic,false
+75498004,Acute bacterial sinusitis (disorder),infectious,false
+10509002,Acute bronchitis (disorder),infectious,false
+195662009,Acute viral pharyngitis (disorder),infectious,false
+7200002,Alcoholism,mental_behavioral,true
+26929004,Alzheimer's disease (disorder),neurological,true
+271737000,Anemia (disorder),other,true
+198992004,Antepartum eclampsia,pregnancy_reproductive,false
+74400008,Appendicitis,gastrointestinal,false
+24079001,Atopic dermatitis,allergic,true
+49436004,Atrial Fibrillation,cardiovascular,true
+6072007,Bleeding from anus,gastrointestinal,false
+35999006,Blighted ovum,pregnancy_reproductive,false
+162864005,Body mass index 30+ - obesity (finding),metabolic_endocrine,true
+408512008,Body mass index 40+ - severely obese (finding),metabolic_endocrine,true
+275272006,Brain damage - traumatic,neurological,true
+262574004,Bullet wound,injury,false
+48333001,Burn injury(morphologic abnormality),injury,false
+92691004,Carcinoma in situ of prostate (disorder),oncology,true
+410429000,Cardiac Arrest,cardiovascular,false
+192127007,Child attention deficit disorder,mental_behavioral,true
+233678006,Childhood asthma,respiratory,true
+88805009,Chronic congestive heart failure (disorder),cardiovascular,true
+124171000119105,Chronic intractable migraine without aura,neurological,true
+431855005,Chronic kidney disease stage 1 (disorder),renal_urinary,true
+431856006,Chronic kidney disease stage 2 (disorder),renal_urinary,true
+185086009,Chronic obstructive bronchitis (disorder),respiratory,true
+82423001,Chronic pain,musculoskeletal,true
+40055000,Chronic sinusitis (disorder),respiratory,true
+359817006,Closed fracture of hip,injury,false
+110030002,Concussion injury of brain,injury,false
+62564004,Concussion with loss of consciousness,injury,false
+62106007,Concussion with no loss of consciousness,injury,false
+40275004,Contact dermatitis,allergic,false
+53741008,Coronary Heart Disease,cardiovascular,true
+38822007,Cystitis,infectious,false
+44054006,Diabetes,metabolic_endocrine,true
+127013003,Diabetic renal disease (disorder),metabolic_endocrine,true
+422034002,Diabetic retinopathy associated with type II diabetes mellitus (disorder),metabolic_endocrine,true
+55680006,Drug overdose,mental_behavioral,false
+84757009,Epilepsy,neurological,true
+301011002,Escherichia coli urinary tract infection,infectious,false
+370247008,Facial laceration,injury,false
+230265002,Familial Alzheimer's disease of early onset (disorder),neurological,true
+156073000,Fetus with unknown complication,pregnancy_reproductive,false
+403190006,First degree burn,injury,false
+16114001,Fracture of ankle,injury,false
+58150001,Fracture of clavicle,injury,false
+65966004,Fracture of forearm,injury,false
+33737001,Fracture of rib,injury,false
+1734006,Fracture of the vertebral column with spinal cord injury,injury,false
+15724005,Fracture of vertebral column without spinal cord injury,injury,false
+263102004,Fracture subluxation of wrist,injury,false
+90560007,Gout,musculoskeletal,true
+428251008,History of appendectomy,gastrointestinal,false
+429007001,History of cardiac arrest (situation),cardiovascular,false
+399211009,History of myocardial infarction (situation),cardiovascular,false
+703151001,History of single seizure (situation),neurological,false
+80394007,Hyperglycemia (disorder),metabolic_endocrine,true
+55822004,Hyperlipidemia,metabolic_endocrine,true
+59621000,Hypertension,cardiovascular,true
+302870006,Hypertriglyceridemia (disorder),metabolic_endocrine,true
+83664006,Idiopathic atrophic hypothyroidism,metabolic_endocrine,true
+196416002,Impacted molars,other,false
+444470001,Injury of anterior cruciate ligament,injury,false
+444448004,Injury of medial collateral ligament of knee,injury,false
+307731004,Injury of tendon of the rotator cuff of shoulder,injury,false
+284551006,Laceration of foot,injury,false
+283371005,Laceration of forearm,injury,false
+284549007,Laceration of hand,injury,false
+283385000,Laceration of thigh,injury,false
+201834006,Localized  primary osteoarthritis of the hand,musculoskeletal,true
+97331000119101,Macular edema and retinopathy due to type 2 diabetes mellitus (disorder),metabolic_endocrine,true
+36923009,Major depression  single episode,mental_behavioral,false
+370143000,Major depression disorder,mental_behavioral,true
+254837009,Malignant neoplasm of breast (disorder),oncology,true
+363406005,Malignant tumor of colon,oncology,true
+237602007,Metabolic syndrome X (disorder),metabolic_endocrine,true
+314994000,Metastasis from malignant tumor of prostate (disorder),oncology,true
+90781000119102,Microalbuminuria due to type 2 diabetes mellitus (disorder),metabolic_endocrine,true
+19169002,Miscarriage in first trimester,pregnancy_reproductive,false
+22298006,Myocardial Infarction,cardiovascular,false
+126906006,Neoplasm of prostate,oncology,true
+368581000119106,Neuropathy due to type 2 diabetes mellitus (disorder),metabolic_endocrine,true
+424132000,Non-small cell carcinoma of lung  TNM stage 1 (disorder),oncology,true
+254637007,Non-small cell lung cancer (disorder),oncology,true
+1551000119108,Nonproliferative diabetic retinopathy due to type 2 diabetes mellitus (disorder),metabolic_endocrine,true
+72892002,Normal pregnancy,pregnancy_reproductive,false
+5602001,Opioid abuse (disorder),mental_behavioral,true
+239872002,Osteoarthritis of hip,musculoskeletal,true
+239873007,Osteoarthritis of knee,musculoskeletal,true
+64859006,Osteoporosis (disorder),musculoskeletal,true
+65363002,Otitis media,infectious,false
+109838007,Overlapping malignant neoplasm of colon,oncology,true
+443165006,Pathological fracture due to osteoporosis (disorder),musculoskeletal,false
+446096008,Perennial allergic rhinitis,allergic,true
+232353008,Perennial allergic rhinitis with seasonal variation,allergic,true
+233604007,Pneumonia,infectious,false
+68496003,Polyp of colon,gastrointestinal,false
+15777000,Prediabetes,metabolic_endocrine,true
+398254007,Preeclampsia,pregnancy_reproductive,false
+95417003,Primary fibromyalgia syndrome,musculoskeletal,true
+93761005,Primary malignant neoplasm of colon,oncology,true
+67811000119102,Primary small cell malignant neoplasm of lung  TNM stage 1 (disorder),oncology,true
+1501000119109,Proliferative diabetic retinopathy due to type II diabetes mellitus (disorder),metabolic_endocrine,true
+236077008,Protracted diarrhea,gastrointestinal,false
+87433001,Pulmonary emphysema (disorder),respiratory,true
+45816000,Pyelonephritis,infectious,false
+713197008,Recurrent rectal polyp,gastrointestinal,true
+197927001,Recurrent urinary tract infection,infectious,true
+69896004,Rheumatoid arthritis,musculoskeletal,true
+47693006,Rupture of appendix,gastrointestinal,false
+30832001,Rupture of patellar tendon,injury,false
+367498001,Seasonal allergic rhinitis,allergic,true
+403191005,Second degree burn,injury,false
+94260004,Secondary malignant neoplasm of colon,oncology,true
+128613002,Seizure disorder,neurological,true
+36971009,Sinusitis (disorder),infectious,false
+254632001,Small cell carcinoma of lung (disorder),oncology,true
+449868002,Smokes tobacco daily,mental_behavioral,true
+44465007,Sprain of ankle,injury,false
+70704007,Sprain of wrist,injury,false
+43878008,Streptococcal sore throat (disorder),infectious,false
+230690007,Stroke,cardiovascular,false
+162573006,Suspected lung cancer (situation),oncology,false
+239720000,Tear of meniscus of knee,injury,false
+79586000,Tubal pregnancy,pregnancy_reproductive,false
+444814009,Viral sinusitis (disorder),infectious,false
+39848009,Whiplash injury to neck,injury,false

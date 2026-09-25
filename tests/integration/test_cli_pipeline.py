@@ -18,6 +18,7 @@ EXPECTED_GOLD = {
     "fct_encounters",
     "fct_medications",
     "fct_conditions",
+    "fct_readmissions",
 }
 
 
