@@ -188,9 +188,14 @@ See [`docs/TODO.md`](docs/TODO.md) for the full finding (the semicolon issue is 
 ```sh
 make test              # unit tests — fast, no Floci needed
 make test-integration  # integration tests — needs `make demo` first (real Floci reads/writes)
+make dbt-check         # dbt parse + dbt unit tests + seeds and their tests — no Floci needed
 ```
 
 Integration tests are skipped by default (`ICEDUCK_IT` unset); `make test-integration` sets it. See [`docs/plans/0008-tests.md`](docs/plans/0008-tests.md).
+
+## CI
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on every pull request and push to `main`, in two parallel jobs that need no Floci: **python** (`make lint`, `ruff format --check`, `make typecheck`, `make test`) and **dbt** (installs dbt Fusion pinned to the local version, then `make dbt-check`). dbt data tests on real models, the integration tests and the Iceberg publish path are **not** covered — run `make demo` and `make test-integration` locally before merging changes that touch them. See [ADR-0014](docs/adr/0014-ci-offline-checks.md).
 
 ## Code quality
 

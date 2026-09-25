@@ -4,7 +4,6 @@ Items explicitly deferred or considered out of scope for now, per `CLAUDE.md` an
 
 ## Out of scope for now
 
-- **CI/CD.** No pipeline exists yet (no GitHub Actions, etc.). Revisit once the core pipeline (ingestion → dbt → marts) is built and there's something meaningful to run on every push.
 - **Orchestration.** No Dagster/Airflow. A Makefile + the `iceduck` CLI drive steps in order; revisit only if the pipeline grows enough dependencies/scheduling needs to justify the added complexity.
 
 ## Pending upstream merge
@@ -55,6 +54,10 @@ The `iceduck` CLI + local-persistent-DuckDB-file idea (pre-resolve every table i
 ### dbt docs site — done
 
 `dbt docs generate` + `dbt docs serve` renders the full model DAG (bronze sources → 6 staging models → 7 mart models) plus schema and test coverage. See [`docs/plans/0009-dbt-docs.md`](plans/0009-dbt-docs.md) — two real bugs were found and fixed getting this working (a hard `var()` lookup blocking `dbt docs generate` entirely, and the DAG initially rendering as 13 disconnected nodes since the project's custom `iceberg_source()` macro bypasses `ref()`/`source()`). Run via `make dbt-docs`.
+
+### CI — done (offline checks)
+
+GitHub Actions runs lint, format, mypy, Python unit tests and `make dbt-check` (dbt parse, dbt unit tests, seeds) on every PR and push to `main` — see [ADR-0014](adr/0014-ci-offline-checks.md). Still open: a job that starts Floci in Docker to run `make demo` + the integration tests and the dbt data tests on real models. No CD.
 
 ### Analyst-facing dashboard — done
 

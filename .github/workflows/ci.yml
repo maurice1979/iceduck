@@ -1,0 +1,59 @@
+# Offline checks only: nothing here needs Floci. Integration tests and the full
+# `make demo` pipeline still run locally — see docs/adr/0014-ci-offline-checks.md.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Python (lint, format, types, unit tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      # The dashboard extra is needed because mypy type-checks dashboard/.
+      - run: uv sync --locked --extra dashboard
+
+      # Settings load from .env; the template's Floci defaults are all the unit tests need.
+      - run: cp .env.template .env
+
+      - run: make lint
+      - run: uv run ruff format --check .
+      - run: make typecheck
+      - run: make test
+
+  dbt:
+    name: dbt (parse, unit tests, seeds)
+    runs-on: ubuntu-latest
+    env:
+      DBT_VERSION: 2.0.6
+    steps:
+      - uses: actions/checkout@v4
+
+      # Fusion is a standalone binary, not a PyPI package (ADR-0013), so no Python setup is needed here.
+      # Pinned to the version used locally so CI and dev don't drift apart silently.
+      - name: Install dbt Fusion
+        run: |
+          curl -fsSL https://public.cdn.getdbt.com/fs/install/install.sh | sh -s -- --version "$DBT_VERSION"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - run: dbt --version
+
+      # profiles.yml reads AWS_* via env_var() even though these checks never connect to Floci.
+      - run: cp .env.template .env
+
+      - run: make dbt-check

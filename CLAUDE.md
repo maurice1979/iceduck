@@ -26,4 +26,4 @@ Key architectural facts to keep consistent across the codebase:
 - Python dependency management: `uv` (not pip/poetry).
 - dbt runs on the Fusion engine (`dbt` v2, a standalone binary installed via `brew install dbt` — not the `dbt-core`/`dbt-duckdb` PyPI packages, which are deliberately absent from `pyproject.toml`). See [ADR-0013](docs/adr/0013-dbt-fusion-engine.md). `uv run dbt` resolves to the Fusion binary on `PATH` precisely because nothing in the venv shadows it.
 - No orchestrator (no Dagster/Airflow) — pipeline steps are driven by a Makefile and a small `click`-based CLI (`iceduck`).
-- No CI/CD yet (tracked as a future addition in `docs/TODO.md`) — don't assume a CI pipeline exists.
+- CI is GitHub Actions (`.github/workflows/ci.yml`), offline checks only — lint, format, mypy, Python unit tests, and `make dbt-check` (dbt parse, dbt unit tests, seeds). Nothing in CI starts Floci, so dbt data tests on real models and integration tests are not covered by it. No CD. See [ADR-0014](docs/adr/0014-ci-offline-checks.md).

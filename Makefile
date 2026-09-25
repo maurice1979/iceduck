@@ -1,4 +1,4 @@
-.PHONY: floci-up floci-down infra-init infra-validate infra-plan infra-apply infra-destroy raw ingest dbt demo demo-full reset test test-integration dbt-docs dashboard lint format typecheck
+.PHONY: floci-up floci-down infra-init infra-validate infra-plan infra-apply infra-destroy raw ingest dbt dbt-check demo demo-full reset test test-integration dbt-docs dashboard lint format typecheck
 
 floci-up:
 	docker compose -f docker/docker-compose.yml up -d --wait
@@ -34,6 +34,16 @@ ingest:
 dbt:
 	uv run iceduck build-silver
 	uv run iceduck build-gold
+
+# dbt checks that need no Floci (also what CI runs): parse the project, run the
+# unit tests (format: sql fixtures touch no real table), and load the seeds with
+# their own tests. `cautious` skips tests that also depend on unbuilt marts
+# (e.g. fct_conditions.code -> condition_categories), which need the full pipeline.
+dbt-check:
+	set -a && . ./.env && set +a && cd dbt/iceduck && \
+		dbt parse --profiles-dir . && \
+		dbt test --select test_type:unit --profiles-dir . && \
+		dbt build --select resource_type:seed --indirect-selection cautious --profiles-dir .
 
 # Unattended end-to-end run on the committed fixture data (no Kaggle token
 # needed) — floci up, infra applied non-interactively, then the full
