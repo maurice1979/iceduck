@@ -161,3 +161,11 @@ models:
               arguments:
                 to: ref('fct_encounters')
                 field: encounter_id
+      - name: code
+        description: SNOMED-CT code of the condition. FK to the condition_categories seed.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('condition_categories')
+                field: code

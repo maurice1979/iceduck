@@ -178,7 +178,9 @@ def build_gold() -> None:
             "dbt",
             "build",
             "--select",
-            "marts",
+            # Seeds alongside marts: with the in-memory profile, a seed only exists for the duration of this process,
+            # so it must be loaded in the same `dbt build` as the marts that ref() it.
+            "marts resource_type:seed",
             "--profiles-dir",
             ".",
             "--vars",
