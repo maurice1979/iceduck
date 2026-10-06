@@ -32,15 +32,15 @@ gold (Iceberg, Glue DB: iceduck_gold)         ← dimensional marts (facts + dim
    ├── queryable from a fresh DuckDB session (via iceberg_scan on the metadata
    │   location Glue resolves — not a live catalog ATTACH; Floci doesn't
    │   implement Glue's Iceberg REST Catalog endpoint, see ADR-0007)
-   └── queryable from Athena (emulated) — works today via a pinned fork build
-       with an unmerged upstream fix, see ADR-0008; verified against a real
+   └── queryable from Athena (emulated) — via our upstream fix released in
+       Floci 2.2.0, see ADR-0015; verified against a real
        gold table (fct_encounters, 358/358 rows matching a fresh DuckDB read
        exactly, same content) — see docs/plans/0006-athena-duckdb-interop.md
 ```
 
 All storage lives in one S3 bucket (emulated via Floci); AWS Glue is the **single catalog** for every layer — there is no separate metadata database. Every write path (bronze, silver, and gold) goes through `pyiceberg`'s `GlueCatalog`, not `dbt-duckdb`'s native Glue-Iceberg materialization — verified via a spike, see [ADR-0005](docs/adr/0005-bronze-pyiceberg-silver-gold-dbt-duckdb.md) and [ADR-0007](docs/adr/0007-iceberg-reads-via-glue-resolved-metadata-location.md). See [`docs/plans/0001-lakehouse-architecture-outline.md`](docs/plans/0001-lakehouse-architecture-outline.md) for the full design rationale, including why DuckLake was considered and dropped in favor of this Iceberg-on-Glue design.
 
-**Note on Athena support**: Floci's Athena emulation couldn't read genuine Iceberg tables out of the box (ADR-0007). We found, fixed, and submitted the root cause upstream — [floci-io/floci#3738](https://github.com/floci-io/floci/pull/3738) — and `docker/docker-compose.yml` currently builds Floci from that fix's commit rather than the official image so this project actually benefits from it now, pending merge (ADR-0008, with a revert TODO in `docs/TODO.md`). With the gold layer built, this was verified for real, not just theoretically: an Athena query against `iceduck_gold.fct_encounters` and a fresh DuckDB `iceberg_scan` session against the same table return identical row counts and identical row content — see [`docs/plans/0006-athena-duckdb-interop.md`](docs/plans/0006-athena-duckdb-interop.md).
+**Note on Athena support**: Floci's Athena emulation couldn't read genuine Iceberg tables out of the box (ADR-0007). We found, fixed, and contributed the root cause upstream — [floci-io/floci#3738](https://github.com/floci-io/floci/pull/3738), released in Floci 2.2.0. Until that release, `docker/docker-compose.yml` built Floci from the fix's commit (ADR-0008); it now pins the official `floci/floci:2.2.0` image (ADR-0015). With the gold layer built, this was verified for real, not just theoretically: an Athena query against `iceduck_gold.fct_encounters` and a fresh DuckDB `iceberg_scan` session against the same table return identical row counts and identical row content — see [`docs/plans/0006-athena-duckdb-interop.md`](docs/plans/0006-athena-duckdb-interop.md).
 
 ## Tech stack
 

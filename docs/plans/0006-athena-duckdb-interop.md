@@ -65,6 +65,8 @@ This **fully resolves** the open question ADR-0007 left for "once gold tables ex
 
 **Still true, unchanged by this verification**: the fix depends on the pinned Floci fork build (`docker/docker-compose.yml`), not the official Floci image — see ADR-0008 and the "Pending upstream merge" item in `docs/TODO.md`. Nothing here revisits that; this just confirms the fork's fix actually delivers what it promised, against this project's own real data.
 
+**Follow-up (2026-10-06):** #3738 shipped in Floci 2.2.0; the project now runs the official `floci/floci:2.2.0` image instead of the fork build — see ADR-0015 and [`0011-official-floci-image.md`](0011-official-floci-image.md), which re-ran this check against it.
+
 ## Verification
 
 Reproducible via:

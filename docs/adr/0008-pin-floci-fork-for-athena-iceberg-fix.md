@@ -1,6 +1,6 @@
 # ADR-0008: Build Floci from our fork's commit, not the official image, pending upstream merge
 
-Status: Accepted
+Status: Superseded by ADR-0015
 Date: 2026-09-16
 
 ## Context

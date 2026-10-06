@@ -6,21 +6,13 @@ Items explicitly deferred or considered out of scope for now, per `CLAUDE.md` an
 
 - **Orchestration.** No Dagster/Airflow. A Makefile + the `iceduck` CLI drive steps in order; revisit only if the pipeline grows enough dependencies/scheduling needs to justify the added complexity.
 
-## Pending upstream merge
-
-- **[ ] Switch `docker/docker-compose.yml`'s `floci` service back to the official `floci/floci` image once [floci-io/floci#3738](https://github.com/floci-io/floci/pull/3738) merges and ships in a release.** We're currently building Floci from our own fork's commit (`maurice1979/floci@feat/athena-iceberg-table-reads`) instead of pulling the official image, specifically to get Athena's Iceberg-table support before it's released upstream — see [ADR-0008](adr/0008-pin-floci-fork-for-athena-iceberg-fix.md) for the full rationale, the pin commit, and the exact revert steps. Don't forget: reprovision infra (`rm infra/tofu/terraform.tfstate* && tofu apply`) after switching back, since a fresh image means fresh Floci-side state.
-
 ## Future exploration
 
-### Athena Iceberg-read support in Floci — fixed upstream, pending merge
+### Athena Iceberg-read support in Floci — fixed upstream, released in Floci 2.2.0
 
-The spike in [`docs/plans/0003-iceberg-glue-spike.md`](plans/0003-iceberg-glue-spike.md) found that Floci's Athena emulation couldn't read genuine Iceberg tables — it format-sniffed `StorageDescriptor.InputFormat`/`SerializationLibrary` and fell back to `read_csv_auto`, which failed outright on Iceberg's Parquet data files. See [ADR-0007](adr/0007-iceberg-reads-via-glue-resolved-metadata-location.md) for the full original finding.
+The spike in [`docs/plans/0003-iceberg-glue-spike.md`](plans/0003-iceberg-glue-spike.md) found that Floci's Athena emulation couldn't read genuine Iceberg tables (see [ADR-0007](adr/0007-iceberg-reads-via-glue-resolved-metadata-location.md)). We fixed it upstream in [floci-io/floci#3738](https://github.com/floci-io/floci/pull/3738) (closes [#3737](https://github.com/floci-io/floci/issues/3737)), which shipped in Floci 2.2.0. IceDuck ran a pinned fork build until then ([ADR-0008](adr/0008-pin-floci-fork-for-athena-iceberg-fix.md)) and now uses the official `floci/floci:2.2.0` image ([ADR-0015](adr/0015-official-floci-release-image.md), [`0011-official-floci-image.md`](plans/0011-official-floci-image.md)). The Athena ↔ DuckDB check on `iceduck_gold.fct_encounters` is in [`0006-athena-duckdb-interop.md`](plans/0006-athena-duckdb-interop.md).
 
-This has since been fixed and submitted upstream as [floci-io/floci#3738](https://github.com/floci-io/floci/pull/3738) (fixing [issue #3737](https://github.com/floci-io/floci/issues/3737)) — implemented by Claude, verified independently twice against live instances (including reproducing the exact orphaned-file/multi-snapshot scenario from ADR-0007 and confirming correct manifest-based resolution, not a glob). IceDuck currently runs on a pinned fork build with this fix included — see the "Pending upstream merge" item above and [ADR-0008](adr/0008-pin-floci-fork-for-athena-iceberg-fix.md).
-
-**Build Order step 8, done**: with the gold layer built, this was verified against real project data, not just the spike's throwaway table — an Athena query against `iceduck_gold.fct_encounters` and a fresh DuckDB `iceberg_scan` session against the same table returned identical row counts and identical row content. See [`docs/plans/0006-athena-duckdb-interop.md`](plans/0006-athena-duckdb-interop.md). The only remaining item is the "Pending upstream merge" one above — switching off the pinned fork once #3738 ships in a release.
-
-Remaining open question, independent of whether/when #3738 merges: **Floci still has no Iceberg REST Catalog endpoint for Glue** (blocks `dbt-duckdb`'s native write path and a literal DuckDB `ATTACH` to Glue — see ADR-0005 and ADR-0007). Re-check upstream periodically; if it's ever added, revisit `ICEBERG_WRITE_MODE=duckdb_native` as a real option.
+Remaining open question: **Floci still has no Iceberg REST Catalog endpoint for Glue** (blocks `dbt-duckdb`'s native write path and a literal DuckDB `ATTACH` to Glue — see ADR-0005 and ADR-0007). Re-check upstream periodically; if it's ever added, revisit `ICEBERG_WRITE_MODE=duckdb_native` as a real option.
 
 ### AWS Lake Formation
 
