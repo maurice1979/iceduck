@@ -1,6 +1,6 @@
 # 0011 — Switch back to the official Floci image
 
-Status: proposed
+Status: applied
 Date: 2026-10-06
 
 Closes the "Pending upstream merge" item in [`docs/TODO.md`](../TODO.md) and follows the revert steps in [ADR-0008](../adr/0008-pin-floci-fork-for-athena-iceberg-fix.md).
@@ -13,7 +13,7 @@ The fix, [floci-io/floci#3738](https://github.com/floci-io/floci/pull/3738) (clo
 
 The fork build is no longer needed. Removing it also removes the dependency on a personal fork and on a GitHub build at `docker compose up` time, along with the inline Dockerfile workaround.
 
-## What will change
+## What changed
 
 ### 1. `docker/docker-compose.yml`
 
@@ -29,7 +29,7 @@ image: floci/floci:2.2.0   # official release containing floci-io/floci#3738 —
 
 ### 2. Decision records
 
-- **New `docs/adr/0015-official-floci-release-image.md`** (from `template.md`; `Status: Proposed` until verified, then `Accepted`). It records two decisions: use the official image, and pin it to a release tag. It explains why we pin and notes that the fork build and the `dockerfile_inline` workaround are gone.
+- **New `docs/adr/0015-official-floci-release-image.md`** (from `template.md`; `Status: Accepted`). It records two decisions: use the official image, and pin it to a release tag. It explains why we pin and notes that the fork build and the `dockerfile_inline` workaround are gone.
 - **ADR-0008**: change only the Status, to `Superseded by ADR-0015`. Context and Decision stay as written, per `docs/adr/README.md`.
 - **`docs/TODO.md`**: remove the "Pending upstream merge" item. Rename the section "Athena Iceberg-read support in Floci — fixed upstream, pending merge" to "…released in Floci 2.2.0" and shorten it. Keep the open question about the missing Iceberg REST Catalog endpoint.
 
@@ -46,16 +46,15 @@ Wherever the docs say "pinned fork", "unmerged upstream fix" or "pending merge",
 
 ## Verification
 
-A new image starts with an empty Floci volume, so every check runs from a fresh state:
+Run from a fresh state, since a new image starts with an empty Floci volume: `make reset`, then `docker compose pull`.
 
-1. `make reset`, then `docker compose -f docker/docker-compose.yml pull`. Confirm the container runs `floci/floci:2.2.0` and that nothing is built locally.
-2. `make demo`: floci-up → infra apply → raw → bronze → silver → gold, including dbt tests.
-3. `make test`, `make dbt-check` and `ICEDUCK_IT=1 make test-integration`. The integration run covers `test_iceberg_publish.py`, `test_ingest_and_lookup.py` and `test_cli_pipeline.py`.
-4. **Interop check**: re-run the check from [`0006-athena-duckdb-interop.md`](0006-athena-duckdb-interop.md). Query `iceduck_gold.fct_encounters` through Athena and through a fresh DuckDB `iceberg_scan` session. Both must return the same row count and the same row content.
-5. Opportunistic: re-test the trailing-semicolon Athena bug from the floci-dash section of `docs/TODO.md` against 2.2.0. If it is fixed, update the TODO; otherwise leave it.
-6. `make dashboard` smoke check.
-
-Record the results here, then set this plan to `applied` and ADR-0015 to `Accepted`.
+- **Image**: the container runs `floci/floci:2.2.0` (pulled, `sha256:0d1fa7a9…`, built 2026-10-06), with nothing built locally. Healthy within seconds.
+- **`make demo`**: passed end to end. Infra applied, raw → bronze → silver → gold. dbt build on silver: 19/19. dbt build on gold: 66 success, 1 no-op. Gold row counts are unchanged from earlier phases (fct_encounters 358, fct_medications 124, fct_conditions 73, fct_readmissions 2, dim_patient 15, dim_provider 32, dim_organization 32).
+- **`make test`**: 15 passed. **`make dbt-check`**: 6/6. **`make lint`**: clean. **`make test-integration`**: 4 passed (`test_cli_pipeline`, `test_iceberg_publish` ×2, `test_ingest_and_lookup`).
+- **Interop check** (as in [`0006-athena-duckdb-interop.md`](0006-athena-duckdb-interop.md)): Athena `SELECT count(*) FROM fct_encounters` = **358**, and a fresh DuckDB `iceberg_scan` on the Glue-resolved `metadata_location` = **358**. All 358 rows of `encounter_id, patient_id, total_claim_cost` (ordered by `encounter_id`) are identical across both engines.
+- **Trailing-semicolon bug**: still present in 2.2.0. `SELECT … ;` fails with `Parser Error: syntax error at or near ";"` inside Floci's `COPY (…) TO 's3://…'` wrapper. The `docs/TODO.md` note stays.
+- **Dashboard**: a Streamlit `AppTest` run of `dashboard/app.py` raised no exceptions, and the KPIs match gold (15 patients, 358 encounters, 32 organizations).
+- **Not a regression**: pyiceberg logs `Unable to resolve region for bucket iceduck-lakehouse` during each publish. `pyarrow.fs.resolve_s3_region` asks real AWS, not the configured endpoint, so the lookup fails for a bucket that exists only in Floci, and pyiceberg falls back to the configured region. Floci itself answers `HEAD /iceduck-lakehouse` with `x-amz-bucket-region: eu-west-1`. This is harmless and does not depend on the Floci version.
 
 ## Risks
 
